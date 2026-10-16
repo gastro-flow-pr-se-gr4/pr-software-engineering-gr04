@@ -1,0 +1,2 @@
+#!/bin/sh
+sh scripts/time-report.sh > TIME_TRACKING.md

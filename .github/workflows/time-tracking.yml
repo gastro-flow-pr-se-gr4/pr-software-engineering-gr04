@@ -1,0 +1,15 @@
+name: Time Tracking
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Zeiten auswerten
+        run: sh scripts/time-report.sh >> "$GITHUB_STEP_SUMMARY"

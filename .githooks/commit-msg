@@ -1,0 +1,19 @@
+#!/bin/sh
+
+# Merge- und Revert-Commits ausnehmen
+if grep -qE '^(Merge|Revert)' "$1"; then
+  exit 0
+fi
+
+# Nur die Zeiterfassungsdatei geändert
+if [ "$(git diff --cached --name-only)" = "TIME_TRACKING.md" ]; then
+  exit 0
+fi
+
+# Zeitangabe prüfen
+if ! grep -qE '\| time: ([0-9]+h([0-9]+m)?|[0-9]+m)[[:space:]]*$' "$1"; then
+  echo "Commit abgelehnt: Zeitangabe fehlt."
+  echo "Format: Beschreibung | time: 1h30m"
+  exit 1
+fi
+
