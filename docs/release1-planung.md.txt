@@ -1,0 +1,6 @@
+# Release 1 – Projektplanung
+
+- Funktionen für Release 1 festgelegt
+- GitHub Issues für Release 1 erstellt
+- Aufgaben beschrieben und strukturiert
+- Release-1-Meilenstein zugeordnet
