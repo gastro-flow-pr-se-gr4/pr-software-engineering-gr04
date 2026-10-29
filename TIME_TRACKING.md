@@ -2,5 +2,5 @@
 
 | Person | Zeit |
 |---|---|
-| Elena | 9h 55m |
-| Gesamt | 9h 55m |
+| Elena | 9h 56m |
+| Gesamt | 9h 56m |
