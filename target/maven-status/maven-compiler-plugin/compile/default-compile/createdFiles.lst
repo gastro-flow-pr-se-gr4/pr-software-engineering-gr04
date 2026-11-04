@@ -1,0 +1,6 @@
+at\gastroflow\model\Product.class
+at\gastroflow\controller\ServiceController.class
+at\gastroflow\MainApp.class
+at\gastroflow\model\OrderItem.class
+at\gastroflow\model\Order.class
+at\gastroflow\service\OrderService.class

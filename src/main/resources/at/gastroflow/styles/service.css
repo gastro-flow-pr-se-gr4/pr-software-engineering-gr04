@@ -1,0 +1,61 @@
+.root-pane {
+    -fx-font-family: "Arial";
+    -fx-background-color: #fff8fb;
+}
+
+.header {
+    -fx-padding: 22;
+    -fx-background-color: #f7d8e6;
+}
+
+.brand {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #7d3153;
+}
+
+.subtitle {
+    -fx-font-size: 14px;
+    -fx-text-fill: #805a6c;
+}
+
+.content {
+    -fx-padding: 24;
+    -fx-background-color: #fff8fb;
+}
+
+.section-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #64364c;
+}
+
+.table-button {
+    -fx-pref-width: 115px;
+    -fx-pref-height: 52px;
+    -fx-background-color: #f7d8e6;
+    -fx-background-radius: 10;
+    -fx-cursor: hand;
+}
+
+.table-button:hover {
+    -fx-background-color: #efb8d0;
+}
+
+.primary-button {
+    -fx-background-color: #a94273;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 10 18;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+}
+
+.total {
+    -fx-font-size: 17px;
+    -fx-font-weight: bold;
+}
+
+.button {
+    -fx-cursor: hand;
+}
