@@ -3,43 +3,167 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
 
-<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="at.gastroflow.controller.ServiceController" styleClass="root-pane">
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="at.gastroflow.controller.ServiceController"
+            stylesheets="@../styles/service.css"
+            styleClass="root-shell">
+
     <top>
-        <VBox spacing="5" styleClass="header">
-            <Label text="GastroFlow" styleClass="brand"/>
-            <Label text="Service · Tischauswahl &amp; Bestellungen" styleClass="subtitle"/>
-        </VBox>
+        <HBox styleClass="header">
+            <Label text="SERVICE" styleClass="brand"/>
+        </HBox>
     </top>
+
     <center>
-        <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER">
+        <ScrollPane fx:id="pageScroll"
+                    fitToWidth="true"
+                    hbarPolicy="NEVER"
+                    styleClass="page-scroll">
+
             <content>
-                <VBox spacing="18" styleClass="content">
-                    <Label text="1. Tisch auswählen" styleClass="section-title"/>
-                    <FlowPane fx:id="tableButtons" hgap="10" vgap="10" prefWrapLength="800"/>
-                    <Separator/>
-                    <VBox fx:id="orderArea" spacing="12">
-                        <Label fx:id="tableLabel" text="Bitte Tisch auswählen" styleClass="section-title"/>
-                        <HBox spacing="20">
-                            <VBox spacing="8" HBox.hgrow="ALWAYS">
-                                <Label text="2. Speisekarte" styleClass="section-title"/>
-                                <ListView fx:id="menuList" prefHeight="260" prefWidth="440"/>
-                                <Button text="Produkt hinzufügen" onAction="#addProduct" styleClass="primary-button"/>
-                            </VBox>
-                            <VBox spacing="8" HBox.hgrow="ALWAYS">
-                                <Label text="3. Aktuelle Bestellung" styleClass="section-title"/>
-                                <ListView fx:id="orderList" prefHeight="200" prefWidth="440"/>
-                                <HBox spacing="10">
-                                    <Button text="+ Menge" onAction="#increaseQuantity"/>
-                                    <Button text="− Menge / Entfernen" onAction="#decreaseQuantity"/>
-                                </HBox>
-                                <Label fx:id="totalLabel" text="Gesamt: 0,00 €" styleClass="total"/>
-                            </VBox>
+                <FlowPane fx:id="contentLayout"
+                          hgap="24"
+                          vgap="24"
+                          prefWrapLength="1100"
+                          styleClass="content-layout">
+
+                    <!-- LINKE SEITE: BESTELLUNG -->
+                    <VBox fx:id="orderPanel"
+                          minWidth="0"
+                          prefWidth="520"
+                          spacing="22"
+                          styleClass="panel">
+
+                        <Label fx:id="currentTitle"
+                               text="Aktuelle Bestellung · Tisch 04"
+                               styleClass="panel-title"/>
+
+                        <HBox spacing="12" styleClass="table-heading">
+                            <Label text="ANZ." minWidth="65"/>
+                            <Label text="ARTIKEL"
+                                   HBox.hgrow="ALWAYS"
+                                   maxWidth="Infinity"/>
+                            <Label text="SUMME"/>
                         </HBox>
-                        <Label text="4. Sonderwünsche" styleClass="section-title"/>
-                        <TextArea fx:id="noteArea" promptText="z. B. ohne Zwiebeln" prefRowCount="2" wrapText="true"/>
-                        <Button text="Bestellung absenden" onAction="#sendOrder" styleClass="primary-button"/>
+
+                        <!-- Wächst automatisch mit den Gerichten -->
+                        <VBox fx:id="currentItems"
+                              spacing="0"
+                              minHeight="0"/>
+
+                        <!-- Direkt unter dem letzten Gericht -->
+                        <VBox spacing="10">
+                            <Label text="SONDERWUNSCH"
+                                   styleClass="section-label"/>
+
+                            <TextArea fx:id="noteArea"
+                                      promptText="z. B. Burger 1 ohne Zwiebeln"
+                                      prefRowCount="3"
+                                      wrapText="true"
+                                      styleClass="note-area"/>
+
+                            <Label fx:id="counterLabel"
+                                   text="0/120"
+                                   styleClass="counter"
+                                   maxWidth="Infinity"
+                                   alignment="CENTER_RIGHT"/>
+                        </VBox>
+
+                        <Separator/>
+
+                        <HBox alignment="CENTER_LEFT">
+                            <Label text="Gesamt"
+                                   styleClass="total-heading"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Label fx:id="totalLabel"
+                                   text="0,00 €"
+                                   styleClass="total-amount"/>
+                        </HBox>
+
+                        <HBox alignment="CENTER_RIGHT" spacing="12">
+                            <Button fx:id="discardButton"
+                                    text="Verwerfen"
+                                    onAction="#discard"
+                                    styleClass="secondary-button"/>
+
+                            <Button fx:id="sendButton"
+                                    text="An Küche senden"
+                                    onAction="#send"
+                                    styleClass="primary-button"/>
+                        </HBox>
+
                     </VBox>
-                </VBox>
+
+                    <!-- RECHTE SEITE -->
+                    <VBox fx:id="rightPanel"
+                          minWidth="0"
+                          prefWidth="520"
+                          spacing="22">
+
+                        <!-- SPEISEKARTE -->
+                        <VBox spacing="20" styleClass="panel">
+                            <HBox fx:id="categoryTabs"
+                                  spacing="3"
+                                  alignment="CENTER_LEFT"/>
+
+                            <FlowPane fx:id="productsPane"
+                                      hgap="14"
+                                      vgap="14"
+                                      prefWrapLength="530"/>
+                        </VBox>
+
+                        <!-- TISCHE -->
+                        <VBox spacing="20" styleClass="panel">
+                            <Label text="Tische"
+                                   styleClass="panel-title"/>
+
+                            <FlowPane fx:id="tablesPane"
+                                      hgap="12"
+                                      vgap="12"
+                                      prefWrapLength="530"/>
+                        </VBox>
+
+                        <!-- ABRECHNUNG -->
+                        <VBox spacing="18" styleClass="panel">
+                            <Label fx:id="paidTitle"
+                                   text="Tisch abrechnen · Tisch 04"
+                                   styleClass="panel-title"/>
+
+                            <VBox fx:id="paidItems"
+                                  spacing="0"
+                                  minHeight="90"/>
+
+                            <Separator/>
+
+                            <HBox alignment="CENTER_LEFT">
+                                <Label text="Zu zahlen"
+                                       styleClass="total-heading"/>
+
+                                <Region HBox.hgrow="ALWAYS"/>
+
+                                <Label fx:id="paidTotal"
+                                       text="0,00 €"
+                                       styleClass="total-amount"/>
+                            </HBox>
+
+                            <HBox alignment="CENTER_RIGHT">
+                                <Button fx:id="payButton"
+                                        text="Bezahlt · Tisch freigeben"
+                                        onAction="#pay"
+                                        styleClass="primary-button"/>
+                            </HBox>
+                        </VBox>
+
+                        <!-- LOGOUT -->
+                        <HBox alignment="CENTER_RIGHT">
+                            <Button text="Logout"
+                                    onAction="#logout"
+                                    styleClass="primary-button"/>
+                        </HBox>
+
+                    </VBox>
+
+                </FlowPane>
             </content>
         </ScrollPane>
     </center>
