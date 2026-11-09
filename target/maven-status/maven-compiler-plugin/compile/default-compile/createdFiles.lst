@@ -1,4 +1,5 @@
 at\gastroflow\model\Product.class
+at\gastroflow\controller\ServiceController$DemoProduct.class
 at\gastroflow\controller\ServiceController.class
 at\gastroflow\MainApp.class
 at\gastroflow\model\OrderItem.class

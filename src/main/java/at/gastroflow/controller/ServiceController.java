@@ -1,8 +1,4 @@
-
 package at.gastroflow.controller;
-
-import at.gastroflow.model.*;
-import at.gastroflow.service.OrderService;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -10,9 +6,11 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 
-import java.util.*;
+import java.util.List;
+import java.util.Locale;
 
 public class ServiceController {
+
 
     @FXML private FlowPane tablesPane, productsPane;
     @FXML private VBox currentItems, paidItems;
@@ -25,38 +23,37 @@ public class ServiceController {
     @FXML private FlowPane contentLayout;
     @FXML private VBox orderPanel, rightPanel;
 
-    private final Map<Integer, Order> drafts = new HashMap<>();
-    private final Map<Integer, List<Order>> sentByTable = new HashMap<>();
+    // Feste Beispieldaten für die UI
 
-    // Aktuell ausgewähltes Gericht
-    private OrderItem selectedItem;
+    private record DemoProduct(
+            String name,
+            String price,
+            String category
+    ) {}
 
-    private final List<Product> products = List.of(
+    private final List<DemoProduct> products = List.of(
+            new DemoProduct("Kürbiscremesuppe", "4,50 €", "Tagesgericht"),
+            new DemoProduct("Hühnerschnitzel mit Petersilienkartoffeln",
+                    "13,90 €", "Tagesgericht"),
+            new DemoProduct("Apfelstrudel", "5,50 €", "Tagesgericht"),
 
-            // Tagesgericht
-            new Product("Kürbiscremesuppe", 4.50, "Tagesgericht"),
-            new Product("Hühnerschnitzel mit Petersilienkartoffeln",
-                    13.90, "Tagesgericht"),
-            new Product("Apfelstrudel", 5.50, "Tagesgericht"),
+            new DemoProduct("Gastro Burger", "14,90 €", "Speisen"),
+            new DemoProduct("Trüffelpasta", "16,50 €", "Speisen"),
+            new DemoProduct("Caesar Salad", "11,80 €", "Speisen"),
+            new DemoProduct("Süßkartoffel-Pommes", "5,90 €", "Speisen"),
 
-            // Speisen
-            new Product("Gastro Burger", 14.90, "Speisen"),
-            new Product("Trüffelpasta", 16.50, "Speisen"),
-            new Product("Caesar Salad", 11.80, "Speisen"),
-            new Product("Süßkartoffel-Pommes", 5.90, "Speisen"),
+            new DemoProduct("Cola 0,33 l", "3,80 €", "Getränke"),
+            new DemoProduct("Espresso", "2,90 €", "Getränke"),
+            new DemoProduct("Wasser", "2,90 €", "Getränke"),
+            new DemoProduct("Apfelsaft", "3,20 €", "Getränke"),
 
-            // Getränke
-            new Product("Cola 0,33 l", 3.80, "Getränke"),
-            new Product("Espresso", 2.90, "Getränke"),
-            new Product("Wasser", 2.90, "Getränke"),
-            new Product("Apfelsaft", 3.20, "Getränke"),
-
-            // Dessert
-            new Product("Schokokuchen", 6.50, "Dessert")
+            new DemoProduct("Schokokuchen", "6,50 €", "Dessert")
     );
 
     private int selectedTable = 4;
     private String category = "Tagesgericht";
+    private String selectedProduct = null;
+    private String demoSpecialRequest = "";
 
     @FXML
     private void initialize() {
@@ -67,49 +64,43 @@ public class ServiceController {
         );
 
         Platform.runLater(() ->
-                updateLayout(
-                        pageScroll.getViewportBounds().getWidth())
+                updateLayout(pageScroll.getViewportBounds().getWidth())
         );
 
-        // Eingabe auf 120 Zeichen begrenzen
         noteArea.textProperty().addListener(
                 (obs, oldText, newText) -> {
 
                     if (newText.length() > 120) {
-                        noteArea.setText(
-                                newText.substring(0, 120));
+                        noteArea.setText(newText.substring(0, 120));
                         return;
                     }
 
                     counterLabel.setText(
-                            noteArea.getText().length() + "/120");
+                            noteArea.getText().length() + "/120"
+                    );
                 }
         );
 
-        // Speicherbutton unter dem Sonderwunschfeld
         Button saveNoteButton =
                 new Button("Sonderwunsch speichern");
 
         saveNoteButton.getStyleClass().add("primary-button");
-
         saveNoteButton.setMaxWidth(Double.MAX_VALUE);
-
         saveNoteButton.setOnAction(e -> saveSpecialRequest());
 
-        // Button zur vorhandenen FXML hinzufügen
         VBox noteBox = (VBox) noteArea.getParent();
         noteBox.getChildren().add(saveNoteButton);
 
-        noteArea.setPromptText(
-                "Zuerst ein Gericht anklicken ...");
+        noteArea.setPromptText("Zuerst ein Gericht auswählen ...");
 
-        renderTables();
-        renderTabs();
-        renderProducts();
+        showTables();
+        showTabs();
+        showProducts();
         refresh();
     }
 
     // Fenstergröße anpassen
+
     private void updateLayout(double viewportWidth) {
 
         if (viewportWidth <= 0) return;
@@ -127,24 +118,17 @@ public class ServiceController {
         contentLayout.setPrefWrapLength(available);
 
         productsPane.setPrefWrapLength(
-                Math.max(200, panelWidth - 52));
+                Math.max(200, panelWidth - 52)
+        );
 
         tablesPane.setPrefWrapLength(
-                Math.max(200, panelWidth - 52));
+                Math.max(200, panelWidth - 52)
+        );
     }
 
-    private String money(double amount) {
-        return String.format(
-                Locale.GERMANY, "%.2f €", amount);
-    }
+    // Tische anzeigen und auswählen
 
-    private Order draft() {
-        return drafts.computeIfAbsent(
-                selectedTable, Order::new);
-    }
-
-    // Tische anzeigen
-    private void renderTables() {
+    private void showTables() {
 
         tablesPane.getChildren().clear();
 
@@ -153,7 +137,8 @@ public class ServiceController {
             final int table = i;
 
             Button button = new Button(
-                    String.format("%02d", i));
+                    String.format("%02d", i)
+            );
 
             button.getStyleClass().add("table-tile");
 
@@ -164,12 +149,11 @@ public class ServiceController {
             button.setOnAction(e -> {
 
                 selectedTable = table;
-
-                // Auswahl beim Tischwechsel zurücksetzen
-                selectedItem = null;
+                selectedProduct = null;
+                demoSpecialRequest = "";
                 noteArea.clear();
 
-                renderTables();
+                showTables();
                 refresh();
             });
 
@@ -178,7 +162,8 @@ public class ServiceController {
     }
 
     // Kategorien anzeigen
-    private void renderTabs() {
+
+    private void showTabs() {
 
         categoryTabs.getChildren().clear();
 
@@ -199,8 +184,8 @@ public class ServiceController {
 
                 category = name;
 
-                renderTabs();
-                renderProducts();
+                showTabs();
+                showProducts();
             });
 
             categoryTabs.getChildren().add(button);
@@ -208,11 +193,12 @@ public class ServiceController {
     }
 
     // Produkte anzeigen
-    private void renderProducts() {
+
+    private void showProducts() {
 
         productsPane.getChildren().clear();
 
-        for (Product product : products) {
+        for (DemoProduct product : products) {
 
             if (!product.category().equals(category)) {
                 continue;
@@ -225,15 +211,17 @@ public class ServiceController {
             name.getStyleClass().add("product-name");
             name.setWrapText(true);
 
-            Label price = new Label(
-                    money(product.price()));
+            Label price = new Label(product.price());
             price.getStyleClass().add("muted");
 
             tile.getChildren().addAll(name, price);
 
             tile.setOnMouseClicked(e -> {
 
-                draft().addProduct(product);
+                selectedProduct = product.name();
+                demoSpecialRequest = "";
+                noteArea.clear();
+
                 refresh();
             });
 
@@ -241,56 +229,44 @@ public class ServiceController {
         }
     }
 
-    // Gericht für Sonderwunsch auswählen
-    private void selectItem(OrderItem item) {
+    // Sonderwunsch
 
-        selectedItem = item;
-
-        // Vorhandenen Sonderwunsch anzeigen
-        noteArea.setText(item.getSpecialRequest());
-
-        noteArea.setPromptText(
-                "Sonderwunsch für " + item.getProduct().name());
-
-        refresh();
-    }
-
-    // Sonderwunsch speichern
     private void saveSpecialRequest() {
 
-        if (selectedItem == null) {
-
-            info("Bitte zuerst ein Gericht "
-                    + "in der Bestellung auswählen.");
+        if (selectedProduct == null) {
+            info("Bitte zuerst ein Produkt auswählen.");
             return;
         }
 
-        String request = noteArea.getText().trim();
-
-        selectedItem.setSpecialRequest(request);
-
+        demoSpecialRequest = noteArea.getText().trim();
         refresh();
-
-        info(request.isEmpty()
-                ? "Sonderwunsch wurde entfernt."
-                : "Sonderwunsch wurde gespeichert.");
     }
 
-    // Bestellung aktualisieren
+
     private void refresh() {
 
         currentTitle.setText(String.format(
                 "Aktuelle Bestellung · Tisch %02d",
-                selectedTable));
+                selectedTable
+        ));
 
         paidTitle.setText(String.format(
                 "Tisch abrechnen · Tisch %02d",
-                selectedTable));
+                selectedTable
+        ));
 
         currentItems.getChildren().clear();
 
-        // Aktuelle Bestellpositionen
-        for (OrderItem item : draft().getItems()) {
+        if (selectedProduct == null) {
+
+            Label empty = new Label(
+                    "Noch keine Artikel – rechts ein Produkt auswählen."
+            );
+
+            empty.getStyleClass().add("muted");
+            currentItems.getChildren().add(empty);
+
+        } else {
 
             VBox itemBox = new VBox(4);
 
@@ -298,94 +274,47 @@ public class ServiceController {
             line.setAlignment(Pos.CENTER_LEFT);
             line.getStyleClass().add("item-row");
 
-            Label qty = new Label(
-                    String.valueOf(item.getQuantity()));
+            Label qty = new Label("1");
             qty.getStyleClass().add("qty");
 
-            Label name = new Label(
-                    item.getProduct().name());
-
+            Label name = new Label(selectedProduct);
             name.setWrapText(true);
 
             HBox.setHgrow(name, Priority.ALWAYS);
             name.setMaxWidth(Double.MAX_VALUE);
 
-            // Gericht auswählen
-            name.setOnMouseClicked(e -> selectItem(item));
-
-            qty.setOnMouseClicked(e -> selectItem(item));
-
-            // Menge verringern
             Button minus = new Button("−");
             minus.getStyleClass().add("small-action");
 
-            minus.setOnAction(e -> {
+            minus.setOnAction(e -> {});
 
-                if (item.getQuantity() == 1) {
-
-                    draft().getItems().remove(item);
-
-                    if (selectedItem == item) {
-                        selectedItem = null;
-                        noteArea.clear();
-                    }
-
-                } else {
-
-                    item.setQuantity(
-                            item.getQuantity() - 1);
-                }
-
-                refresh();
-            });
-
-            // Menge erhöhen
             Button plus = new Button("+");
             plus.getStyleClass().add("small-action");
 
-            plus.setOnAction(e -> {
+            plus.setOnAction(e -> {});
 
-                item.setQuantity(
-                        item.getQuantity() + 1);
-
-                refresh();
-            });
-
-            Label sum = new Label(
-                    money(item.getTotal()));
-            sum.getStyleClass().add("line-price");
-
-            sum.setOnMouseClicked(e -> selectItem(item));
+            Label price = new Label("0,00 €");
+            price.getStyleClass().add("line-price");
 
             line.getChildren().addAll(
-                    qty, name, minus, plus, sum);
-
-            // Ausgewähltes Gericht hervorheben
-            if (selectedItem == item) {
-
-                itemBox.setStyle(
-                        "-fx-background-color: #e8f0ff;"
-                                + "-fx-background-radius: 8;"
-                                + "-fx-padding: 5;");
-            }
+                    qty, name, minus, plus, price
+            );
 
             itemBox.getChildren().add(line);
 
-            // Gespeicherten Sonderwunsch anzeigen
-            if (!item.getSpecialRequest().isEmpty()) {
+            if (!demoSpecialRequest.isEmpty()) {
 
                 Label request = new Label(
-                        "↳ " + item.getSpecialRequest());
+                        "↳ " + demoSpecialRequest
+                );
 
                 request.setWrapText(true);
 
                 request.setStyle(
-                        "-fx-text-fill: #64748b;"
-                                + "-fx-font-size: 12px;"
-                                + "-fx-padding: 0 0 8 35;");
-
-                request.setOnMouseClicked(
-                        e -> selectItem(item));
+                        "-fx-text-fill: #64748b;" +
+                                "-fx-font-size: 12px;" +
+                                "-fx-padding: 0 0 8 35;"
+                );
 
                 itemBox.getChildren().add(request);
             }
@@ -393,178 +322,53 @@ public class ServiceController {
             currentItems.getChildren().add(itemBox);
         }
 
-        // Leere Bestellung
-        if (draft().getItems().isEmpty()) {
+        totalLabel.setText("0,00 €");
 
-            Label empty = new Label(
-                    "Noch keine Artikel – rechts ein Produkt auswählen.");
+        discardButton.setDisable(selectedProduct == null);
+        sendButton.setDisable(selectedProduct == null);
 
-            empty.getStyleClass().add("muted");
-
-            currentItems.getChildren().add(empty);
-        }
-
-        totalLabel.setText(
-                money(draft().getTotal()));
-
-        boolean hasDraft =
-                !draft().getItems().isEmpty();
-
-        discardButton.setDisable(!hasDraft);
-        sendButton.setDisable(!hasDraft);
-
-        // Gesendete Bestellungen
         paidItems.getChildren().clear();
 
-        double sentTotal = 0;
+        Label paidEmpty = new Label(
+                "Noch keine gesendeten Bestellungen."
+        );
 
-        for (Order sent : sentByTable.getOrDefault(
-                selectedTable, List.of())) {
+        paidEmpty.getStyleClass().add("muted");
+        paidItems.getChildren().add(paidEmpty);
 
-            sentTotal += sent.getTotal();
-
-            for (OrderItem item : sent.getItems()) {
-
-                VBox itemBox = new VBox(4);
-
-                HBox line = new HBox(12);
-                line.setAlignment(Pos.CENTER_LEFT);
-                line.getStyleClass().add("item-row");
-
-                Label qty = new Label(
-                        String.valueOf(item.getQuantity()));
-
-                qty.getStyleClass().add("qty");
-
-                Label name = new Label(
-                        item.getProduct().name());
-
-                HBox.setHgrow(name, Priority.ALWAYS);
-                name.setMaxWidth(Double.MAX_VALUE);
-
-                Label sum = new Label(
-                        money(item.getTotal()));
-
-                line.getChildren().addAll(qty, name, sum);
-                itemBox.getChildren().add(line);
-
-                // Sonderwunsch auch bei Abrechnung anzeigen
-                if (!item.getSpecialRequest().isEmpty()) {
-
-                    Label request = new Label(
-                            "↳ " + item.getSpecialRequest());
-
-                    request.setWrapText(true);
-
-                    request.setStyle(
-                            "-fx-text-fill: #64748b;"
-                                    + "-fx-font-size: 12px;"
-                                    + "-fx-padding: 0 0 8 35;");
-
-                    itemBox.getChildren().add(request);
-                }
-
-                paidItems.getChildren().add(itemBox);
-            }
-        }
-
-        if (paidItems.getChildren().isEmpty()) {
-
-            Label empty = new Label(
-                    "Noch keine gesendeten Bestellungen.");
-
-            empty.getStyleClass().add("muted");
-
-            paidItems.getChildren().add(empty);
-        }
-
-        paidTotal.setText(money(sentTotal));
-        payButton.setDisable(sentTotal == 0);
+        paidTotal.setText("0,00 €");
+        payButton.setDisable(false);
     }
 
-    // Bestellung verwerfen
+
     @FXML
     private void discard() {
 
-        drafts.put(
-                selectedTable,
-                new Order(selectedTable));
-
-        selectedItem = null;
+        selectedProduct = null;
+        demoSpecialRequest = "";
         noteArea.clear();
 
         refresh();
+
+        info("Bestellung verworfen.");
     }
 
-    // Bestellung senden
     @FXML
     private void send() {
 
-        if (draft().getItems().isEmpty()) {
-            return;
-        }
-
-        Order order = draft();
-
-        // Hinweis bei noch nicht gespeichertem Sonderwunsch
-        if (selectedItem != null
-                && !noteArea.getText().trim().equals(
-                selectedItem.getSpecialRequest())) {
-
-            info("Bitte zuerst den Sonderwunsch speichern.");
-            return;
-        }
-
-        OrderService.send(order);
-
-        sentByTable.computeIfAbsent(
-                selectedTable,
-                k -> new ArrayList<>()
-        ).add(order);
-
-        drafts.put(
-                selectedTable,
-                new Order(selectedTable));
-
-        selectedItem = null;
-        noteArea.clear();
-
-        refresh();
-
-        info("Bestellung für Tisch "
-                + String.format("%02d", selectedTable)
-                + " wurde gespeichert. "
-                + "Noch keine Küchenanbindung.");
+        info("Bestellung an die Küche gesendet.");
     }
 
-    // Tisch abrechnen
     @FXML
     private void pay() {
 
-        if (sentByTable.getOrDefault(
-                selectedTable, List.of()).isEmpty()) {
-            return;
-        }
-
-        sentByTable.remove(selectedTable);
-
-        drafts.put(
-                selectedTable,
-                new Order(selectedTable));
-
-        selectedItem = null;
-        noteArea.clear();
-
-        refresh();
-
-        info("Tisch "
-                + String.format("%02d", selectedTable)
-                + " als bezahlt markiert und freigegeben (Demo).");
+        info("Tisch als bezahlt markiert.");
     }
 
     @FXML
     private void logout() {
-        info("Logout ist noch nicht mit einer Anmeldung verbunden.");
+
+        info("Logout.");
     }
 
     private void info(String message) {
@@ -572,7 +376,8 @@ public class ServiceController {
         Alert alert = new Alert(
                 Alert.AlertType.INFORMATION,
                 message,
-                ButtonType.OK);
+                ButtonType.OK
+        );
 
         alert.setHeaderText(null);
         alert.showAndWait();
