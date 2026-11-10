@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<StackPane xmlns:fx="http://javafx.com/fxml"
+           fx:controller="at.gastroflow.frontend.controller.LoginController"
+           stylesheets="@../styles/login.css"
+           styleClass="login-background">
+
+    <VBox alignment="CENTER"
+          spacing="18"
+          maxWidth="420"
+          styleClass="login-card">
+
+        <Label text="GastroFlow"
+               styleClass="login-title"/>
+
+        <Label text="Restaurant Management System"
+               styleClass="login-subtitle"/>
+
+        <Separator/>
+
+        <Label text="Willkommen zurück!"
+               styleClass="welcome-title"/>
+
+        <Label text="Melde dich an, um fortzufahren."
+               styleClass="welcome-subtitle"/>
+
+        <!-- BENUTZERNAME -->
+        <VBox spacing="8">
+            <Label text="Benutzername"
+                   styleClass="field-label"/>
+
+            <TextField fx:id="usernameField"
+                       promptText="Benutzername eingeben"
+                       styleClass="login-input"/>
+        </VBox>
+
+        <!-- PASSWORT -->
+        <VBox spacing="8">
+            <Label text="Passwort"
+                   styleClass="field-label"/>
+
+            <PasswordField fx:id="passwordField"
+                           promptText="Passwort eingeben"
+                           styleClass="login-input"/>
+        </VBox>
+
+        <!-- ROLLE -->
+        <VBox spacing="8">
+            <Label text="Arbeitsbereich"
+                   styleClass="field-label"/>
+
+            <ComboBox fx:id="roleBox"
+                      promptText="Bereich auswählen"
+                      maxWidth="Infinity"
+                      styleClass="login-input"/>
+        </VBox>
+
+        <!-- ANMELDEN -->
+        <Button text="Anmelden →"
+                onAction="#handleLogin"
+                maxWidth="Infinity"
+                styleClass="login-button"/>
+
+        <Label text="GastroFlow · Restaurant Management"
+               styleClass="footer-text"/>
+
+    </VBox>
+</StackPane>

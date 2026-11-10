@@ -5,6 +5,13 @@ import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+import java.io.IOException;
 
 import java.util.List;
 
@@ -381,4 +388,28 @@ public class ServiceController {
         alert.setHeaderText(null);
         alert.showAndWait();
     }
+
+
+    @FXML
+    private void handleLogout(ActionEvent event) throws IOException {
+
+        FXMLLoader loader = new FXMLLoader(
+                getClass().getResource(
+                        "/at/gastroflow/frontend/views/login.fxml"
+                )
+        );
+
+        Stage stage = (Stage) ((Node) event.getSource())
+                .getScene().getWindow();
+
+        Scene scene = new Scene(
+                loader.load(),
+                stage.getScene().getWidth(),
+                stage.getScene().getHeight()
+        );
+
+        stage.setScene(scene);
+        stage.setTitle("GastroFlow – Anmeldung");
+    }
+
 }

@@ -27,7 +27,7 @@
                           prefWrapLength="1100"
                           styleClass="content-layout">
 
-                    <!-- LINKE SEITE: BESTELLUNG -->
+                    <!-- AKTUELLE BESTELLUNG -->
                     <VBox fx:id="orderPanel"
                           minWidth="0"
                           prefWidth="520"
@@ -46,12 +46,10 @@
                             <Label text="SUMME"/>
                         </HBox>
 
-                        <!-- Wächst automatisch mit den Gerichten -->
                         <VBox fx:id="currentItems"
                               spacing="0"
                               minHeight="0"/>
 
-                        <!-- Direkt unter dem letzten Gericht -->
                         <VBox spacing="10">
                             <Label text="SONDERWUNSCH"
                                    styleClass="section-label"/>
@@ -94,7 +92,7 @@
 
                     </VBox>
 
-                    <!-- RECHTE SEITE -->
+                    <!-- RECHTER BEREICH -->
                     <VBox fx:id="rightPanel"
                           minWidth="0"
                           prefWidth="520"
@@ -157,7 +155,7 @@
                         <!-- LOGOUT -->
                         <HBox alignment="CENTER_RIGHT">
                             <Button text="Logout"
-                                    onAction="#logout"
+                                    onAction="#handleLogout"
                                     styleClass="primary-button"/>
                         </HBox>
 

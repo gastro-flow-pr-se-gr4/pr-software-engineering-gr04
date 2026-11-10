@@ -16,7 +16,7 @@ public class MainApp extends Application {
 
         FXMLLoader loader = new FXMLLoader(
                 getClass().getResource(
-                        "/at/gastroflow/frontend/views/service.fxml"
+                        "/at/gastroflow/frontend/views/login.fxml"
                 )
         );
 
@@ -25,7 +25,7 @@ public class MainApp extends Application {
                 Math.min(1250, screen.getWidth() * 0.92),
                 Math.min(850, screen.getHeight() * 0.90));
 
-        stage.setTitle("GastroFlow – Service");
+        stage.setTitle("GastroFlow – Anmeldung");
         stage.setScene(scene);
         stage.setX(screen.getMinX() + (screen.getWidth() - scene.getWidth()) / 2);
         stage.setY(screen.getMinY() + (screen.getHeight() - scene.getHeight()) / 2);
