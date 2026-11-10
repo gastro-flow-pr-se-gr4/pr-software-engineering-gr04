@@ -1,7 +1,6 @@
-
 # Time Tracking
 
 | Person | Zeit |
 |---|---|
-| Elena | 12h 48m |
-| Gesamt | 12h 48m |
+| Elena | 13h 23m |
+| Gesamt | 13h 23m |
