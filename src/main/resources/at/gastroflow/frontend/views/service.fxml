@@ -4,7 +4,7 @@
 <?import javafx.geometry.Insets?>
 
 <BorderPane xmlns:fx="http://javafx.com/fxml"
-            fx:controller="at.gastroflow.controller.ServiceController"
+            fx:controller="at.gastroflow.frontend.controller.ServiceController"
             stylesheets="@../styles/service.css"
             styleClass="root-shell">
 

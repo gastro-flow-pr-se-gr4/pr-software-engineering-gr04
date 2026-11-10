@@ -16,7 +16,7 @@ public class MainApp extends Application {
 
         FXMLLoader loader = new FXMLLoader(
                 getClass().getResource(
-                        "/at/gastroflow/views/service.fxml"
+                        "/at/gastroflow/frontend/views/service.fxml"
                 )
         );
 

@@ -1,6 +1,6 @@
-package at.gastroflow.service;
+package at.gastroflow.backend.service;
 
-import at.gastroflow.model.Order;
+import at.gastroflow.backend.model.Order;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

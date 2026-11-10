@@ -1,4 +1,4 @@
-package at.gastroflow.model;
+package at.gastroflow.backend.model;
 
 public record Product(String name, double price, String category) {
     @Override

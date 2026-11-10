@@ -1,4 +1,4 @@
-package at.gastroflow.controller;
+package at.gastroflow.frontend.controller;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -7,7 +7,6 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 
 import java.util.List;
-import java.util.Locale;
 
 public class ServiceController {
 
