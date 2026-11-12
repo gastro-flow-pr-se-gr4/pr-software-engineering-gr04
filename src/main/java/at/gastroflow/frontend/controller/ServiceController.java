@@ -29,8 +29,7 @@ public class ServiceController {
     @FXML private FlowPane contentLayout;
     @FXML private VBox orderPanel, rightPanel;
 
-    // Feste Beispieldaten für die UI
-
+    // Beispieldaten
     private record DemoProduct(
             String name,
             String price,
