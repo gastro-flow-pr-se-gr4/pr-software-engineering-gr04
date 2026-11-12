@@ -33,24 +33,38 @@ public class LoginController {
     @FXML
     private void handleLogin() throws IOException {
 
-        if ("Service".equals(roleBox.getValue())) {
+        String selectedRole = roleBox.getValue();
 
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource(
-                            "/at/gastroflow/frontend/views/service.fxml"
-                    )
-            );
+        String viewPath;
+        String windowTitle;
 
-            Stage stage = (Stage) roleBox.getScene().getWindow();
+        if ("Service".equals(selectedRole)) {
+            viewPath = "/at/gastroflow/frontend/views/service.fxml";
+            windowTitle = "GastroFlow – Service";
 
-            Scene scene = new Scene(
-                    loader.load(),
-                    stage.getScene().getWidth(),
-                    stage.getScene().getHeight()
-            );
+        } else if ("Küche".equals(selectedRole)) {
+            viewPath = "/at/gastroflow/frontend/views/kitchen.fxml";
+            windowTitle = "GastroFlow – Küche";
 
-            stage.setScene(scene);
-            stage.setTitle("GastroFlow – Service");
+        } else {
+            // Leitung ist noch nicht implementiert
+            return;
         }
+
+        FXMLLoader loader = new FXMLLoader(
+                getClass().getResource(viewPath)
+        );
+
+        Stage stage = (Stage)
+                roleBox.getScene().getWindow();
+
+        Scene scene = new Scene(
+                loader.load(),
+                stage.getScene().getWidth(),
+                stage.getScene().getHeight()
+        );
+
+        stage.setScene(scene);
+        stage.setTitle(windowTitle);
     }
 }

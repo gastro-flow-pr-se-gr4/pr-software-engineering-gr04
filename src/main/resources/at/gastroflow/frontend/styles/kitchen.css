@@ -1,0 +1,171 @@
+.root-shell {
+    -fx-font-family: "Segoe UI", Arial, sans-serif;
+    -fx-background-color: #f4f6fa;
+    -fx-font-size: 15px;
+}
+
+/* Kopfzeile */
+
+.header {
+    -fx-padding: 18 24;
+    -fx-background-color: white;
+    -fx-border-color: #d8dfe8;
+    -fx-border-width: 0 0 1 0;
+}
+
+.brand {
+    -fx-font-size: 19px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #10243c;
+}
+
+.logout-button {
+    -fx-background-color: #e2e7ed;
+    -fx-text-fill: #10243c;
+    -fx-background-radius: 8;
+    -fx-padding: 10 18;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.logout-button:hover {
+    -fx-background-color: #d4dce6;
+}
+
+/* Scrollbereich */
+
+.page-scroll {
+    -fx-background-color: transparent;
+    -fx-background: #f4f6fa;
+}
+
+.page-scroll > .viewport {
+    -fx-background-color: #f4f6fa;
+}
+
+.content-layout {
+    -fx-padding: 24 22;
+    -fx-alignment: TOP_LEFT;
+}
+
+/* Überschriften */
+
+.page-title {
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #10243c;
+}
+
+.page-subtitle {
+    -fx-font-size: 14px;
+    -fx-text-fill: #6d7d94;
+}
+
+.section-title {
+    -fx-font-size: 21px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #10243c;
+}
+
+/* Statistik-Karten */
+
+.stat-card {
+    -fx-background-color: white;
+    -fx-background-radius: 12;
+    -fx-border-color: #d6dde7;
+    -fx-border-radius: 12;
+    -fx-padding: 22;
+}
+
+.stat-title {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #62758d;
+}
+
+.stat-number {
+    -fx-font-size: 34px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #10243c;
+}
+
+.stat-description {
+    -fx-font-size: 13px;
+    -fx-text-fill: #6d7d94;
+}
+
+/* Bestellkarten */
+
+.order-card {
+    -fx-background-color: white;
+    -fx-background-radius: 12;
+    -fx-border-color: #d6dde7;
+    -fx-border-radius: 12;
+    -fx-padding: 20;
+}
+
+.order-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #10243c;
+}
+
+.order-items {
+    -fx-font-size: 15px;
+    -fx-text-fill: #10243c;
+    -fx-line-spacing: 5;
+}
+
+.order-note {
+    -fx-font-size: 13px;
+    -fx-text-fill: #8a5a16;
+    -fx-background-color: #fff4df;
+    -fx-background-radius: 7;
+    -fx-padding: 10;
+}
+
+/* Bestellstatus */
+
+.status-label {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 6 10;
+    -fx-background-radius: 7;
+}
+
+.status-new {
+    -fx-background-color: #fff1d6;
+    -fx-text-fill: #986000;
+}
+
+.status-preparing {
+    -fx-background-color: #dceafb;
+    -fx-text-fill: #245a96;
+}
+
+.status-finished {
+    -fx-background-color: #def3e5;
+    -fx-text-fill: #287044;
+}
+
+/* Buttons */
+
+.button {
+    -fx-cursor: hand;
+    -fx-font-weight: bold;
+}
+
+.primary-button {
+    -fx-background-color: #315f9f;
+    -fx-text-fill: white;
+    -fx-background-radius: 8;
+    -fx-padding: 14 20;
+}
+
+.primary-button:hover {
+    -fx-background-color: #244d86;
+}
+
+.button:disabled {
+    -fx-opacity: 0.55;
+}

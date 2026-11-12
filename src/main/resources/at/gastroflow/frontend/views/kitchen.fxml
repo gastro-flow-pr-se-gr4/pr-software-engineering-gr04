@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="at.gastroflow.frontend.controller.KitchenController"
+            stylesheets="@../styles/kitchen.css"
+            styleClass="root-shell">
+
+    <!-- Kopfzeile -->
+    <top>
+        <HBox alignment="CENTER_LEFT"
+              spacing="20"
+              styleClass="header">
+
+            <Label text="KÜCHE"
+                   styleClass="brand"/>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <Button text="Abmelden"
+                    onAction="#handleLogout"
+                    styleClass="logout-button"/>
+
+        </HBox>
+    </top>
+
+    <!-- Hauptinhalt -->
+    <center>
+        <ScrollPane fitToWidth="true"
+                    hbarPolicy="NEVER"
+                    styleClass="page-scroll">
+
+            <content>
+                <VBox spacing="28"
+                      styleClass="content-layout">
+
+                    <!-- Überschrift -->
+                    <VBox spacing="8">
+                        <Label text="Küchenübersicht"
+                               styleClass="page-title"/>
+
+                        <Label text="Alle aktuellen Bestellungen im Überblick"
+                               styleClass="page-subtitle"/>
+                    </VBox>
+
+                    <!-- Statusübersicht -->
+                    <FlowPane hgap="20"
+                              vgap="20"
+                              prefWrapLength="1050">
+
+                        <!-- Neue Bestellungen -->
+                        <VBox spacing="12"
+                              prefWidth="300"
+                              styleClass="stat-card">
+
+                            <Label text="NEUE BESTELLUNGEN"
+                                   styleClass="stat-title"/>
+
+                            <Label fx:id="newCount"
+                                   text="0"
+                                   styleClass="stat-number"/>
+
+                            <Label text="Warten auf Zubereitung"
+                                   styleClass="stat-description"/>
+                        </VBox>
+
+                        <!-- In Zubereitung -->
+                        <VBox spacing="12"
+                              prefWidth="300"
+                              styleClass="stat-card">
+
+                            <Label text="IN ZUBEREITUNG"
+                                   styleClass="stat-title"/>
+
+                            <Label fx:id="preparingCount"
+                                   text="0"
+                                   styleClass="stat-number"/>
+
+                            <Label text="Werden gerade zubereitet"
+                                   styleClass="stat-description"/>
+                        </VBox>
+
+                        <!-- Fertige Bestellungen -->
+                        <VBox spacing="12"
+                              prefWidth="300"
+                              styleClass="stat-card">
+
+                            <Label text="FERTIG"
+                                   styleClass="stat-title"/>
+
+                            <Label fx:id="finishedCount"
+                                   text="0"
+                                   styleClass="stat-number"/>
+
+                            <Label text="Bereit zur Abholung"
+                                   styleClass="stat-description"/>
+                        </VBox>
+
+                    </FlowPane>
+
+                    <!-- Bestellbereich -->
+                    <VBox spacing="18">
+
+                        <Label text="Aktuelle Bestellungen"
+                               styleClass="section-title"/>
+
+                        <FlowPane fx:id="ordersPane"
+                                  hgap="20"
+                                  vgap="20"
+                                  prefWrapLength="1050"/>
+
+                    </VBox>
+
+                </VBox>
+            </content>
+        </ScrollPane>
+    </center>
+
+</BorderPane>

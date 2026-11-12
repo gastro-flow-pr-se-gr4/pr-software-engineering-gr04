@@ -154,7 +154,7 @@
 
                         <!-- LOGOUT -->
                         <HBox alignment="CENTER_RIGHT">
-                            <Button text="Logout"
+                            <Button text="Abmelden"
                                     onAction="#handleLogout"
                                     styleClass="primary-button"/>
                         </HBox>
