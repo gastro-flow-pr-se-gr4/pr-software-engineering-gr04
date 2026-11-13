@@ -100,9 +100,10 @@
 
                         <!-- SPEISEKARTE -->
                         <VBox spacing="20" styleClass="panel">
-                            <HBox fx:id="categoryTabs"
-                                  spacing="3"
-                                  alignment="CENTER_LEFT"/>
+                            <FlowPane fx:id="categoryTabs"
+                                      hgap="3"
+                                      vgap="6"
+                                      alignment="CENTER_LEFT"/>
 
                             <FlowPane fx:id="productsPane"
                                       hgap="14"

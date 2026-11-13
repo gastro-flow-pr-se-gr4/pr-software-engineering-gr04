@@ -13,7 +13,17 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import java.io.IOException;
 
+import java.time.LocalDateTime;
 import java.util.List;
+
+import at.gastroflow.backend.model.Order;
+import at.gastroflow.backend.model.OrderItem;
+import at.gastroflow.backend.model.OrderStatus;
+import at.gastroflow.backend.model.Product;
+import at.gastroflow.backend.service.DemoData;
+import at.gastroflow.backend.service.InventoryService;
+import at.gastroflow.backend.service.MenuService;
+import at.gastroflow.backend.service.OrderService;
 
 public class ServiceController {
 
@@ -24,44 +34,23 @@ public class ServiceController {
     @FXML private Label paidTotal, counterLabel;
     @FXML private TextArea noteArea;
     @FXML private Button discardButton, sendButton, payButton;
-    @FXML private HBox categoryTabs;
+    @FXML private FlowPane categoryTabs;
     @FXML private ScrollPane pageScroll;
     @FXML private FlowPane contentLayout;
     @FXML private VBox orderPanel, rightPanel;
 
-    // Beispieldaten
-    private record DemoProduct(
-            String name,
-            String price,
-            String category
-    ) {}
-
-    private final List<DemoProduct> products = List.of(
-            new DemoProduct("Kürbiscremesuppe", "4,50 €", "Tagesgericht"),
-            new DemoProduct("Hühnerschnitzel mit Petersilienkartoffeln",
-                    "13,90 €", "Tagesgericht"),
-            new DemoProduct("Apfelstrudel", "5,50 €", "Tagesgericht"),
-
-            new DemoProduct("Gastro Burger", "14,90 €", "Speisen"),
-            new DemoProduct("Trüffelpasta", "16,50 €", "Speisen"),
-            new DemoProduct("Caesar Salad", "11,80 €", "Speisen"),
-            new DemoProduct("Süßkartoffel-Pommes", "5,90 €", "Speisen"),
-
-            new DemoProduct("Cola 0,33 l", "3,80 €", "Getränke"),
-            new DemoProduct("Espresso", "2,90 €", "Getränke"),
-            new DemoProduct("Wasser", "2,90 €", "Getränke"),
-            new DemoProduct("Apfelsaft", "3,20 €", "Getränke"),
-
-            new DemoProduct("Schokokuchen", "6,50 €", "Dessert")
-    );
-
+    // Produkte kommen aus der gemeinsamen Speisekarte (von der Leitung verwaltet)
     private int selectedTable = 4;
-    private String category = "Tagesgericht";
-    private String selectedProduct = null;
+    private String category = null;
+    private Product selectedProduct = null;
     private String demoSpecialRequest = "";
 
     @FXML
     private void initialize() {
+
+        DemoData.load();
+        List<String> categories = categoriesWithProducts();
+        category = categories.isEmpty() ? null : categories.get(0);
 
         pageScroll.viewportBoundsProperty().addListener(
                 (obs, oldBounds, bounds) ->
@@ -172,11 +161,7 @@ public class ServiceController {
 
         categoryTabs.getChildren().clear();
 
-        for (String name : List.of(
-                "Tagesgericht",
-                "Speisen",
-                "Getränke",
-                "Dessert")) {
+        for (String name : categoriesWithProducts()) {
 
             Button button = new Button(name);
             button.getStyleClass().add("category-tab");
@@ -203,27 +188,28 @@ public class ServiceController {
 
         productsPane.getChildren().clear();
 
-        for (DemoProduct product : products) {
+        // Nur aktive Produkte – deaktivierte können nicht neu bestellt werden
+        for (Product product : MenuService.getAvailableProducts()) {
 
-            if (!product.category().equals(category)) {
+            if (!product.getCategory().equals(category)) {
                 continue;
             }
 
             VBox tile = new VBox(9);
             tile.getStyleClass().add("product-tile");
 
-            Label name = new Label(product.name());
+            Label name = new Label(product.getName());
             name.getStyleClass().add("product-name");
             name.setWrapText(true);
 
-            Label price = new Label(product.price());
+            Label price = new Label(formatPrice(product.getPrice()));
             price.getStyleClass().add("muted");
 
             tile.getChildren().addAll(name, price);
 
             tile.setOnMouseClicked(e -> {
 
-                selectedProduct = product.name();
+                selectedProduct = product;
                 demoSpecialRequest = "";
                 noteArea.clear();
 
@@ -282,7 +268,7 @@ public class ServiceController {
             Label qty = new Label("1");
             qty.getStyleClass().add("qty");
 
-            Label name = new Label(selectedProduct);
+            Label name = new Label(selectedProduct.getName());
             name.setWrapText(true);
 
             HBox.setHgrow(name, Priority.ALWAYS);
@@ -298,7 +284,7 @@ public class ServiceController {
 
             plus.setOnAction(e -> {});
 
-            Label price = new Label("0,00 €");
+            Label price = new Label(formatPrice(selectedProduct.getPrice()));
             price.getStyleClass().add("line-price");
 
             line.getChildren().addAll(
@@ -327,7 +313,7 @@ public class ServiceController {
             currentItems.getChildren().add(itemBox);
         }
 
-        totalLabel.setText("0,00 €");
+        totalLabel.setText(formatPrice(selectedProduct == null ? 0 : selectedProduct.getPrice()));
 
         discardButton.setDisable(selectedProduct == null);
         sendButton.setDisable(selectedProduct == null);
@@ -361,7 +347,39 @@ public class ServiceController {
     @FXML
     private void send() {
 
-        info("Bestellung an die Küche gesendet.");
+        if (selectedProduct == null) {
+            info("Bitte zuerst ein Produkt auswählen.");
+            return;
+        }
+
+        // Echte Bestellung anlegen – die Zutaten werden dabei automatisch vom Lager abgebucht
+        Order order = new Order(selectedTable, "Service", LocalDateTime.now(), 1,
+                List.of(new OrderItem(selectedProduct, 1)), OrderStatus.NEU);
+        order.setNote(demoSpecialRequest);
+        OrderService.send(order);
+
+        String stockHint = InventoryService.problemFor(order)
+                .map(problem -> "\n\nHinweis Lager: " + problem)
+                .orElse("");
+
+        selectedProduct = null;
+        demoSpecialRequest = "";
+        noteArea.clear();
+        refresh();
+
+        info("Bestellung #" + order.getNumber() + " an die Küche gesendet." + stockHint);
+    }
+
+    // Kategorien der Speisekarte, in denen es aktive Produkte gibt
+    private List<String> categoriesWithProducts() {
+        return MenuService.getCategories().stream()
+                .filter(c -> MenuService.getAvailableProducts().stream()
+                        .anyMatch(p -> p.getCategory().equals(c)))
+                .toList();
+    }
+
+    private String formatPrice(double price) {
+        return String.format("%.2f €", price).replace('.', ',');
     }
 
     @FXML
