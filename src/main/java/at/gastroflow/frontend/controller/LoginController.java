@@ -46,8 +46,12 @@ public class LoginController {
             viewPath = "/at/gastroflow/frontend/views/kitchen.fxml";
             windowTitle = "GastroFlow – Küche";
 
+        } else if ("Leitung".equals(selectedRole)) {
+            viewPath = "/at/gastroflow/frontend/views/management.fxml";
+            windowTitle = "GastroFlow – Leitung";
+
         } else {
-            // Leitung ist noch nicht implementiert
+            // Keine Rolle ausgewählt
             return;
         }
 

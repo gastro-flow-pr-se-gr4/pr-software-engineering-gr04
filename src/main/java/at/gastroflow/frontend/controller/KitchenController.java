@@ -11,6 +11,14 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import at.gastroflow.backend.model.Order;
+import at.gastroflow.backend.model.OrderStatus;
+import at.gastroflow.backend.service.DemoData;
+import at.gastroflow.backend.service.OrderService;
 
 public class KitchenController {
 
@@ -29,55 +37,50 @@ public class KitchenController {
     // Wird beim Öffnen der Küchenansicht ausgeführt
     @FXML
     private void initialize() {
-        showDemoOrders();
+        DemoData.load();
+        showOrders();
     }
 
-    // Zeigt feste Beispielbestellungen an
-    private void showDemoOrders() {
+    // Zeigt alle offenen Bestellungen aus dem gemeinsamen Bestellsystem an (älteste zuerst)
+    private void showOrders() {
 
         ordersPane.getChildren().clear();
 
-        // Zähler für die Beispielbestellungen
-        newCount.setText("1");
-        preparingCount.setText("1");
-        finishedCount.setText("2");
+        List<Order> openOrders = OrderService.getOpenOrders().stream()
+                .sorted(Comparator.comparing(Order::getCreatedAt))
+                .toList();
 
-        // Bestellung 1 - Neu
-        createOrderCard(
-                "1024",
-                "5",
-                "2× Gastro Burger\n1× Süßkartoffel-Pommes",
-                "Burger ohne Zwiebeln",
-                "Neu"
-        );
+        // Zähler
+        newCount.setText(String.valueOf(count(openOrders, OrderStatus.NEU)));
+        preparingCount.setText(String.valueOf(count(openOrders, OrderStatus.IN_ZUBEREITUNG)));
+        finishedCount.setText(String.valueOf(count(openOrders, OrderStatus.FERTIG)));
 
-        // Bestellung 2 - In Zubereitung
-        createOrderCard(
-                "1025",
-                "2",
-                "1× Trüffelpasta\n1× Caesar Salad",
-                "",
-                "In Zubereitung"
-        );
+        if (openOrders.isEmpty()) {
+            Label empty = new Label("Keine offenen Bestellungen.");
+            empty.getStyleClass().add("order-items");
+            ordersPane.getChildren().add(empty);
+        }
 
-        // Bestellung 3 - Fertig
-        createOrderCard(
-                "1023",
-                "4",
-                "2× Hühnerschnitzel\n1× Kürbiscremesuppe",
-                "Suppe zuerst",
-                "Fertig"
-        );
+        for (Order order : openOrders) {
+            createOrderCard(order);
+        }
+    }
+
+    private long count(List<Order> orders, OrderStatus status) {
+        return orders.stream().filter(order -> order.getStatus() == status).count();
     }
 
     // Erstellt eine Bestellkarte für die Oberfläche
-    private void createOrderCard(
-            String number,
-            String table,
-            String products,
-            String note,
-            String statusText
-    ) {
+    private void createOrderCard(Order order) {
+
+        String number = String.valueOf(order.getNumber());
+        String table = String.valueOf(order.getTable());
+        String products = order.getItems().stream()
+                .map(item -> item.getQuantity() + "× " + item.getProductName())
+                .collect(Collectors.joining("\n"));
+        String note = order.getNote();
+        String statusText = order.getStatus().toString();
+
 
         VBox card = new VBox(15);
         card.getStyleClass().add("order-card");
@@ -146,10 +149,15 @@ public class KitchenController {
         button.getStyleClass().add("primary-button");
         button.setMaxWidth(Double.MAX_VALUE);
 
-        // Nur Frontend-Demo, keine Geschäftslogik
+        // Status im gemeinsamen Bestellsystem weiterschalten
         button.setOnAction(event -> {
-            button.setText("Aktion ausgewählt (Demo)");
-            button.setDisable(true);
+            OrderStatus next = switch (order.getStatus()) {
+                case NEU -> OrderStatus.IN_ZUBEREITUNG;
+                case IN_ZUBEREITUNG -> OrderStatus.FERTIG;
+                default -> OrderStatus.ABGESCHLOSSEN; // abgeholt
+            };
+            OrderService.changeStatus(order, next);
+            showOrders();
         });
 
         card.getChildren().add(button);

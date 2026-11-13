@@ -2,6 +2,6 @@
 
 | Person | Zeit |
 |---|---|
-| Jien Wong | 3h 30m |
+| Jien Wong | 8h 15m |
 | Elena | 14h 33m |
-| Gesamt | 18h 03m |
+| Gesamt | 22h 48m |

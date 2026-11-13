@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="at.gastroflow.frontend.controller.ManagementController"
+            stylesheets="@../styles/management.css"
+            styleClass="root-shell">
+
+    <!-- Kopfzeile -->
+    <top>
+        <HBox alignment="CENTER_LEFT"
+              spacing="14"
+              styleClass="header">
+
+            <Label text="LEITUNG"
+                   styleClass="brand"/>
+
+            <Label fx:id="restaurantLabel"
+                   styleClass="header-subtitle"/>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <Button text="Abmelden"
+                    onAction="#handleLogout"
+                    styleClass="logout-button"/>
+
+        </HBox>
+    </top>
+
+    <!-- Interne Navigation der Leitung -->
+    <left>
+        <VBox fx:id="navBox"
+              spacing="4"
+              prefWidth="220"
+              styleClass="sidebar"/>
+    </left>
+
+    <!-- Inhalt des gewählten Bereichs -->
+    <center>
+        <StackPane fx:id="contentPane"/>
+    </center>
+
+</BorderPane>
