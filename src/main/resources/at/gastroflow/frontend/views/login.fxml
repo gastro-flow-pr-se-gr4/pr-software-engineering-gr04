@@ -59,6 +59,13 @@
                       styleClass="login-input"/>
         </VBox>
 
+        <!-- FEHLERMELDUNG -->
+        <Label fx:id="errorLabel"
+               styleClass="error-text"
+               wrapText="true"
+               visible="false"
+               managed="false"/>
+
         <!-- ANMELDEN -->
         <Button text="Anmelden →"
                 onAction="#handleLogin"

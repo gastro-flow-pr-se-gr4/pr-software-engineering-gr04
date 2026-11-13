@@ -83,3 +83,14 @@
 .separator *.line {
     -fx-border-color: #d8dfe8;
 }
+
+.input-error {
+    -fx-border-color: #d64545;
+    -fx-background-color: #fdf1f1;
+}
+
+.error-text {
+    -fx-text-fill: #c0392b;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}

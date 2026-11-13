@@ -8,11 +8,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
-import java.io.IOException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -211,7 +207,7 @@ public class ServiceController {
                     ReservationService.setStatus(reservation, ReservationStatus.ANWESEND);
                     selectTable(reservation.getTable());
                 } catch (IllegalArgumentException e) {
-                    info(e.getMessage());
+                    warning(e.getMessage());
                 }
                 showReservations();
             }));
@@ -445,6 +441,12 @@ public class ServiceController {
 
             productsPane.getChildren().add(tile);
         }
+
+        if (productsPane.getChildren().isEmpty()) {
+            Label empty = new Label("Keine Produkte in dieser Kategorie verfügbar.");
+            empty.getStyleClass().add("muted");
+            productsPane.getChildren().add(empty);
+        }
     }
 
     // Sonderwunsch
@@ -452,7 +454,7 @@ public class ServiceController {
     private void saveSpecialRequest() {
 
         if (selectedProduct == null) {
-            info("Bitte zuerst ein Produkt auswählen.");
+            warning("Bitte zuerst ein Produkt auswählen.");
             return;
         }
 
@@ -575,7 +577,7 @@ public class ServiceController {
     private void send() {
 
         if (selectedProduct == null) {
-            info("Bitte zuerst ein Produkt auswählen.");
+            warning("Bitte zuerst ein Produkt auswählen.");
             return;
         }
 
@@ -616,12 +618,6 @@ public class ServiceController {
         info("Tisch als bezahlt markiert.");
     }
 
-    @FXML
-    private void logout() {
-
-        info("Logout.");
-    }
-
     private void info(String message) {
 
         Alert alert = new Alert(
@@ -634,27 +630,23 @@ public class ServiceController {
         alert.showAndWait();
     }
 
+    private void warning(String message) {
+
+        Alert alert = new Alert(
+                Alert.AlertType.WARNING,
+                message,
+                ButtonType.OK
+        );
+
+        alert.setTitle("Hinweis");
+        alert.setHeaderText(null);
+        alert.showAndWait();
+    }
+
 
     @FXML
-    private void handleLogout(ActionEvent event) throws IOException {
-
-        FXMLLoader loader = new FXMLLoader(
-                getClass().getResource(
-                        "/at/gastroflow/frontend/views/login.fxml"
-                )
-        );
-
-        Stage stage = (Stage) ((Node) event.getSource())
-                .getScene().getWindow();
-
-        Scene scene = new Scene(
-                loader.load(),
-                stage.getScene().getWidth(),
-                stage.getScene().getHeight()
-        );
-
-        stage.setScene(scene);
-        stage.setTitle("GastroFlow – Anmeldung");
+    private void handleLogout(ActionEvent event) {
+        Navigation.toLogin((Node) event.getSource());
     }
 
 }
