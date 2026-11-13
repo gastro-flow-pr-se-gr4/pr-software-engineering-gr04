@@ -9,12 +9,31 @@
             styleClass="root-shell">
 
     <top>
-        <HBox styleClass="header">
+        <HBox styleClass="header" spacing="24" alignment="CENTER_LEFT">
             <Label text="SERVICE" styleClass="brand"/>
+
+            <!-- Seiten innerhalb des Service -->
+            <HBox spacing="6" alignment="CENTER_LEFT">
+                <Button fx:id="orderTab"
+                        text="Bestellen"
+                        onAction="#showOrderPage"
+                        styleClass="service-tab"/>
+                <Button fx:id="reservationTab"
+                        text="Reservierungen"
+                        onAction="#showReservationPage"
+                        styleClass="service-tab"/>
+            </HBox>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <Button text="Abmelden"
+                    onAction="#handleLogout"
+                    styleClass="logout-button"/>
         </HBox>
     </top>
 
     <center>
+        <StackPane>
         <ScrollPane fx:id="pageScroll"
                     fitToWidth="true"
                     hbarPolicy="NEVER"
@@ -153,17 +172,48 @@
                             </HBox>
                         </VBox>
 
-                        <!-- LOGOUT -->
-                        <HBox alignment="CENTER_RIGHT">
-                            <Button text="Abmelden"
-                                    onAction="#handleLogout"
-                                    styleClass="primary-button"/>
-                        </HBox>
-
                     </VBox>
 
                 </FlowPane>
             </content>
         </ScrollPane>
+
+        <!-- SEITE: RESERVIERUNGEN -->
+        <ScrollPane fx:id="reservationPage"
+                    fitToWidth="true"
+                    hbarPolicy="NEVER"
+                    visible="false"
+                    styleClass="page-scroll">
+
+            <content>
+                <VBox spacing="20" styleClass="content-layout">
+
+                    <HBox alignment="CENTER_LEFT" spacing="12">
+                        <VBox spacing="6">
+                            <Label text="Reservierungen heute"
+                                   styleClass="page-title"/>
+                            <Label fx:id="reservationSummary"
+                                   styleClass="muted"/>
+                        </VBox>
+
+                        <Region HBox.hgrow="ALWAYS"/>
+
+                        <Button text="Aktualisieren"
+                                onAction="#refreshReservations"
+                                styleClass="secondary-button"/>
+                        <Button text="+ Reservierung"
+                                onAction="#newReservation"
+                                styleClass="primary-button"/>
+                    </HBox>
+
+                    <VBox styleClass="panel">
+                        <VBox fx:id="reservationsBox"
+                              spacing="0"/>
+                    </VBox>
+
+                </VBox>
+            </content>
+        </ScrollPane>
+        </StackPane>
     </center>
 </BorderPane>

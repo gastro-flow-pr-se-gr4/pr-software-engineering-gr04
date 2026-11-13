@@ -13,8 +13,17 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import java.io.IOException;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+
+import at.gastroflow.backend.model.Reservation;
+import at.gastroflow.backend.model.ReservationStatus;
+import at.gastroflow.backend.model.RestaurantSettings;
+import at.gastroflow.backend.service.ReservationService;
+import at.gastroflow.frontend.management.ReservationDialog;
+import at.gastroflow.frontend.management.Ui;
 
 import at.gastroflow.backend.model.Order;
 import at.gastroflow.backend.model.OrderItem;
@@ -35,9 +44,15 @@ public class ServiceController {
     @FXML private TextArea noteArea;
     @FXML private Button discardButton, sendButton, payButton;
     @FXML private FlowPane categoryTabs;
+    @FXML private VBox reservationsBox;
+    @FXML private ScrollPane reservationPage;
+    @FXML private Label reservationSummary;
+    @FXML private Button orderTab, reservationTab;
     @FXML private ScrollPane pageScroll;
     @FXML private FlowPane contentLayout;
     @FXML private VBox orderPanel, rightPanel;
+
+    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
 
     // Produkte kommen aus der gemeinsamen Speisekarte (von der Leitung verwaltet)
     private int selectedTable = 4;
@@ -90,7 +105,152 @@ public class ServiceController {
         showTables();
         showTabs();
         showProducts();
+        showReservations();
         refresh();
+        showOrderPage();
+    }
+
+    // Seiten innerhalb des Service: Bestellen und Reservierungen
+
+    @FXML
+    private void showOrderPage() {
+        switchPage(true);
+    }
+
+    @FXML
+    private void showReservationPage() {
+        showReservations();
+        switchPage(false);
+    }
+
+    private void switchPage(boolean orders) {
+        pageScroll.setVisible(orders);
+        reservationPage.setVisible(!orders);
+
+        orderTab.getStyleClass().remove("service-tab-active");
+        reservationTab.getStyleClass().remove("service-tab-active");
+        (orders ? orderTab : reservationTab).getStyleClass().add("service-tab-active");
+    }
+
+    @FXML
+    private void refreshReservations() {
+        showReservations();
+    }
+
+    // Reservierungen von heute (gleiche Daten wie in der Leitung)
+
+    private void showReservations() {
+
+        reservationsBox.getChildren().clear();
+        LocalDateTime now = LocalDateTime.now();
+        List<Reservation> today = ReservationService.getReservationsOn(LocalDate.now());
+
+        int guests = today.stream()
+                .filter(r -> r.getStatus() != ReservationStatus.NO_SHOW)
+                .mapToInt(Reservation::getPersons).sum();
+        long expected = today.stream()
+                .filter(r -> r.getStatus() == ReservationStatus.BESTAETIGT).count();
+        reservationSummary.setText(LocalDate.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))
+                + "  ·  " + today.size() + " Reservierungen  ·  " + guests + " Gäste  ·  "
+                + expected + " noch erwartet");
+
+        if (today.isEmpty()) {
+            Label empty = new Label("Heute gibt es keine Reservierungen.");
+            empty.getStyleClass().add("muted");
+            reservationsBox.getChildren().add(empty);
+        }
+
+        for (Reservation reservation : today) {
+            reservationsBox.getChildren().add(reservationRow(reservation, now));
+        }
+    }
+
+    private VBox reservationRow(Reservation reservation, LocalDateTime now) {
+
+        Label time = new Label(reservation.getStart().format(TIME_FORMAT)
+                + "–" + reservation.getEnd().format(TIME_FORMAT));
+        time.getStyleClass().add("res-time");
+
+        Label name = new Label(reservation.getName());
+        name.getStyleClass().add("res-name");
+        name.setWrapText(true);
+
+        Label status = Ui.badge(Ui.reservationLabel(reservation, now),
+                Ui.reservationColor(reservation, now));
+
+        Region space = new Region();
+        HBox.setHgrow(space, Priority.ALWAYS);
+        HBox top = new HBox(10, time, name, space, status);
+        top.setAlignment(Pos.CENTER_LEFT);
+
+        Label details = new Label(reservation.getPersons() + " Pers. · Tisch "
+                + reservation.getTable()
+                + (reservation.hasPhone() ? " · ☎ " + reservation.getPhone() : ""));
+        details.getStyleClass().add("muted");
+
+        VBox row = new VBox(6, top, details);
+        row.getStyleClass().add("item-row");
+
+        if (reservation.getNote() != null && !reservation.getNote().isBlank()) {
+            Label note = new Label("Notiz: " + reservation.getNote());
+            note.getStyleClass().add("muted");
+            note.setWrapText(true);
+            row.getChildren().add(note);
+        }
+
+        // Aktionen
+        HBox actions = new HBox(8);
+
+        if (reservation.getStatus() == ReservationStatus.BESTAETIGT) {
+            actions.getChildren().add(actionButton("Angekommen", () -> {
+                try {
+                    ReservationService.setStatus(reservation, ReservationStatus.ANWESEND);
+                    selectTable(reservation.getTable());
+                } catch (IllegalArgumentException e) {
+                    info(e.getMessage());
+                }
+                showReservations();
+            }));
+        }
+
+        actions.getChildren().addAll(
+                actionButton("Für Tisch " + reservation.getTable() + " bestellen", () -> {
+                    selectTable(reservation.getTable());
+                    showOrderPage();
+                }),
+                actionButton("Bearbeiten", () -> {
+                    if (ReservationDialog.show(reservation, LocalDate.now())) {
+                        showReservations();
+                    }
+                }));
+
+        row.getChildren().add(actions);
+        return row;
+    }
+
+    private Button actionButton(String text, Runnable action) {
+        Button button = new Button(text);
+        button.getStyleClass().add("small-action");
+        button.setOnAction(e -> action.run());
+        return button;
+    }
+
+    // Wählt einen Tisch für die neue Bestellung aus
+    private void selectTable(int table) {
+        selectedTable = table;
+        selectedProduct = null;
+        demoSpecialRequest = "";
+        noteArea.clear();
+        showTables();
+        refresh();
+    }
+
+    // Neue Reservierung für heute anlegen (mit Prüfung, ob der Tisch frei ist)
+    @FXML
+    private void newReservation() {
+        if (ReservationDialog.show(null, LocalDate.now())) {
+            showReservations();
+        }
     }
 
     // Fenstergröße anpassen
@@ -126,7 +286,8 @@ public class ServiceController {
 
         tablesPane.getChildren().clear();
 
-        for (int i = 1; i <= 6; i++) {
+        // Tischanzahl aus den gemeinsamen Einstellungen (von der Leitung festgelegt)
+        for (int i = 1; i <= RestaurantSettings.get().getTableCount(); i++) {
 
             final int table = i;
 

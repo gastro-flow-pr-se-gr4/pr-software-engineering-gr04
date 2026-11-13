@@ -190,6 +190,68 @@
     -fx-background-radius: 5;
 }
 
+/* Seiten-Tabs in der Kopfzeile */
+
+.service-tab {
+    -fx-background-color: transparent;
+    -fx-text-fill: #62758d;
+    -fx-font-size: 15px;
+    -fx-padding: 9 16;
+    -fx-background-radius: 8;
+}
+
+.service-tab:hover {
+    -fx-background-color: #eef2f7;
+}
+
+.service-tab.service-tab-active {
+    -fx-background-color: #315f9f;
+    -fx-text-fill: white;
+}
+
+.logout-button {
+    -fx-background-color: #e2e7ed;
+    -fx-text-fill: #10243c;
+    -fx-background-radius: 8;
+    -fx-padding: 10 18;
+}
+
+.logout-button:hover {
+    -fx-background-color: #d4dce6;
+}
+
+.page-title {
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #10243c;
+}
+
+/* Reservierungen heute */
+
+.res-time {
+    -fx-font-weight: bold;
+    -fx-text-fill: #10243c;
+    -fx-min-width: 95;
+}
+
+.res-name {
+    -fx-font-weight: bold;
+    -fx-text-fill: #10243c;
+}
+
+.status-label {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 5 10;
+    -fx-background-radius: 7;
+}
+
+.status-green  { -fx-background-color: #def3e5; -fx-text-fill: #287044; }
+.status-blue   { -fx-background-color: #dceafb; -fx-text-fill: #245a96; }
+.status-orange { -fx-background-color: #fff1d6; -fx-text-fill: #986000; }
+.status-gray   { -fx-background-color: #e8ecf1; -fx-text-fill: #52647a; }
+.status-red    { -fx-background-color: #fde2e1; -fx-text-fill: #b42318; }
+
 .separator *.line {
     -fx-border-color: #d8dfe8;
 }
