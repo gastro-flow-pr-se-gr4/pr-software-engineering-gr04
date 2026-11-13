@@ -12,16 +12,12 @@ import at.gastroflow.frontend.management.OrdersView;
 import at.gastroflow.frontend.management.SettingsView;
 import at.gastroflow.frontend.management.StaffView;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.stage.Stage;
 
-import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -91,24 +87,7 @@ public class ManagementController {
 
     // Zurück zur Anmeldung
     @FXML
-    private void handleLogout() throws IOException {
-
-        FXMLLoader loader = new FXMLLoader(
-                getClass().getResource(
-                        "/at/gastroflow/frontend/views/login.fxml"
-                )
-        );
-
-        Stage stage = (Stage)
-                contentPane.getScene().getWindow();
-
-        Scene scene = new Scene(
-                loader.load(),
-                stage.getScene().getWidth(),
-                stage.getScene().getHeight()
-        );
-
-        stage.setScene(scene);
-        stage.setTitle("GastroFlow – Anmeldung");
+    private void handleLogout() {
+        Navigation.toLogin(contentPane);
     }
 }

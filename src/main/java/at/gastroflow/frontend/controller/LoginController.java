@@ -1,14 +1,10 @@
 package at.gastroflow.frontend.controller;
 
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
-import javafx.stage.Stage;
-
-import java.io.IOException;
 
 public class LoginController {
 
@@ -22,53 +18,54 @@ public class LoginController {
     private ComboBox<String> roleBox;
 
     @FXML
+    private Label errorLabel;
+
+    @FXML
     public void initialize() {
         roleBox.getItems().addAll(
                 "Service",
                 "Küche",
                 "Leitung"
         );
+
+        // Fehler ausblenden, sobald ein Bereich gewählt wurde
+        roleBox.valueProperty().addListener((obs, oldValue, newValue) -> hideError());
     }
 
     @FXML
-    private void handleLogin() throws IOException {
+    private void handleLogin() {
 
         String selectedRole = roleBox.getValue();
 
-        String viewPath;
-        String windowTitle;
-
-        if ("Service".equals(selectedRole)) {
-            viewPath = "/at/gastroflow/frontend/views/service.fxml";
-            windowTitle = "GastroFlow – Service";
-
-        } else if ("Küche".equals(selectedRole)) {
-            viewPath = "/at/gastroflow/frontend/views/kitchen.fxml";
-            windowTitle = "GastroFlow – Küche";
-
-        } else if ("Leitung".equals(selectedRole)) {
-            viewPath = "/at/gastroflow/frontend/views/management.fxml";
-            windowTitle = "GastroFlow – Leitung";
-
-        } else {
-            // Keine Rolle ausgewählt
+        if (selectedRole == null) {
+            showError("Bitte einen Arbeitsbereich auswählen.");
             return;
         }
 
-        FXMLLoader loader = new FXMLLoader(
-                getClass().getResource(viewPath)
-        );
+        if (selectedRole.equals("Service")) {
+            Navigation.show(roleBox, Navigation.SERVICE, "Service");
 
-        Stage stage = (Stage)
-                roleBox.getScene().getWindow();
+        } else if (selectedRole.equals("Küche")) {
+            Navigation.show(roleBox, Navigation.KITCHEN, "Küche");
 
-        Scene scene = new Scene(
-                loader.load(),
-                stage.getScene().getWidth(),
-                stage.getScene().getHeight()
-        );
+        } else if (selectedRole.equals("Leitung")) {
+            Navigation.show(roleBox, Navigation.MANAGEMENT, "Leitung");
+        }
+    }
 
-        stage.setScene(scene);
-        stage.setTitle(windowTitle);
+    private void showError(String message) {
+        errorLabel.setText(message);
+        errorLabel.setVisible(true);
+        errorLabel.setManaged(true);
+
+        if (!roleBox.getStyleClass().contains("input-error")) {
+            roleBox.getStyleClass().add("input-error");
+        }
+    }
+
+    private void hideError() {
+        errorLabel.setVisible(false);
+        errorLabel.setManaged(false);
+        roleBox.getStyleClass().remove("input-error");
     }
 }

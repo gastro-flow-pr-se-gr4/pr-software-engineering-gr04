@@ -1,16 +1,12 @@
 package at.gastroflow.frontend.controller;
 
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.stage.Stage;
 
-import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -168,24 +164,7 @@ public class KitchenController {
 
     // Zurück zur Anmeldung
     @FXML
-    private void handleLogout() throws IOException {
-
-        FXMLLoader loader = new FXMLLoader(
-                getClass().getResource(
-                        "/at/gastroflow/frontend/views/login.fxml"
-                )
-        );
-
-        Stage stage = (Stage)
-                ordersPane.getScene().getWindow();
-
-        Scene scene = new Scene(
-                loader.load(),
-                stage.getScene().getWidth(),
-                stage.getScene().getHeight()
-        );
-
-        stage.setScene(scene);
-        stage.setTitle("GastroFlow – Anmeldung");
+    private void handleLogout() {
+        Navigation.toLogin(ordersPane);
     }
 }
