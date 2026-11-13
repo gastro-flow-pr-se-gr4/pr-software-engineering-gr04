@@ -135,10 +135,25 @@
                             <Label text="Tische"
                                    styleClass="panel-title"/>
 
-                            <FlowPane fx:id="tablesPane"
-                                      hgap="12"
-                                      vgap="12"
-                                      prefWrapLength="530"/>
+                            <VBox spacing="14" styleClass="room">
+                                <HBox alignment="CENTER_LEFT">
+                                    <Label text="Bar" styleClass="room-bar"/>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <Label text="Eingang" styleClass="room-door"/>
+                                </HBox>
+
+                                <GridPane fx:id="tablesPane"
+                                          hgap="14"
+                                          vgap="14"
+                                          alignment="CENTER"/>
+                            </VBox>
+
+                            <HBox spacing="18" alignment="CENTER_LEFT">
+                                <Label text="Frei" styleClass="legend-frei"/>
+                                <Label text="Reserviert" styleClass="legend-reserviert"/>
+                                <Label text="Besetzt" styleClass="legend-besetzt"/>
+                                <Label text="Ausgewählt" styleClass="legend-selected"/>
+                            </HBox>
                         </VBox>
 
                         <!-- ABRECHNUNG -->
