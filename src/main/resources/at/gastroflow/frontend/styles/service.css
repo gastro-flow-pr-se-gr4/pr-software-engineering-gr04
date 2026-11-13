@@ -172,15 +172,105 @@
     -fx-border-color: #d8dfe8;
     -fx-border-radius: 8;
     -fx-background-radius: 8;
-    -fx-min-width: 70;
-    -fx-min-height: 70;
-    -fx-font-size: 21px;
+    -fx-min-width: 80;
+    -fx-min-height: 80;
+    -fx-font-size: 15px;
+    -fx-text-alignment: center;
+    -fx-border-width: 2;
+}
+
+/* Raumplan */
+
+.room {
+    -fx-background-color: #f7f3ec;
+    -fx-border-color: #c9bfae;
+    -fx-border-width: 3;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 14;
+}
+
+.room-bar {
+    -fx-background-color: #8a6d4b;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 6 40;
+    -fx-background-radius: 4;
+}
+
+.room-door {
+    -fx-text-fill: #6d7d94;
+    -fx-border-color: #6d7d94;
+    -fx-border-width: 0 0 3 0;
+    -fx-padding: 2 12;
+}
+
+.table-small {
+    -fx-min-width: 80;
+    -fx-pref-width: 80;
+    -fx-background-radius: 40;
+    -fx-border-radius: 40;
+}
+
+.table-medium {
+    -fx-min-width: 110;
+    -fx-pref-width: 110;
+}
+
+.table-large {
+    -fx-min-width: 135;
+    -fx-pref-width: 135;
+}
+
+.table-frei {
+    -fx-background-color: #e5f4ea;
+    -fx-border-color: #7cc196;
+}
+
+.table-reserviert {
+    -fx-background-color: #fff3d6;
+    -fx-border-color: #e8b84a;
+}
+
+.table-besetzt {
+    -fx-background-color: #fbe2e2;
+    -fx-border-color: #e07d7d;
 }
 
 .selected-table {
     -fx-background-color: #315f9f;
     -fx-text-fill: white;
-    -fx-border-color: #315f9f;
+    -fx-border-width: 4;
+}
+
+.legend-frei,
+.legend-reserviert,
+.legend-besetzt,
+.legend-selected {
+    -fx-font-size: 13px;
+    -fx-padding: 3 10;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+}
+
+.legend-frei {
+    -fx-background-color: #e5f4ea;
+    -fx-border-color: #7cc196;
+}
+
+.legend-reserviert {
+    -fx-background-color: #fff3d6;
+    -fx-border-color: #e8b84a;
+}
+
+.legend-besetzt {
+    -fx-background-color: #fbe2e2;
+    -fx-border-color: #e07d7d;
+}
+
+.legend-selected {
+    -fx-background-color: #315f9f;
+    -fx-text-fill: white;
 }
 
 .small-action {

@@ -2,6 +2,7 @@ package at.gastroflow.frontend.controller;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.geometry.HPos;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -37,7 +38,8 @@ import at.gastroflow.backend.service.OrderService;
 public class ServiceController {
 
 
-    @FXML private FlowPane tablesPane, productsPane;
+    @FXML private GridPane tablesPane;
+    @FXML private FlowPane productsPane;
     @FXML private VBox currentItems, paidItems;
     @FXML private Label currentTitle, totalLabel, paidTitle;
     @FXML private Label paidTotal, counterLabel;
@@ -53,6 +55,7 @@ public class ServiceController {
     @FXML private VBox orderPanel, rightPanel;
 
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
+    private static final int TABLES_PER_ROW = 3;
 
     // Produkte kommen aus der gemeinsamen Speisekarte (von der Leitung verwaltet)
     private int selectedTable = 4;
@@ -135,6 +138,7 @@ public class ServiceController {
     @FXML
     private void refreshReservations() {
         showReservations();
+        showTables();
     }
 
     // Reservierungen von heute (gleiche Daten wie in der Leitung)
@@ -221,6 +225,7 @@ public class ServiceController {
                 actionButton("Bearbeiten", () -> {
                     if (ReservationDialog.show(reservation, LocalDate.now())) {
                         showReservations();
+                        showTables();
                     }
                 }));
 
@@ -250,6 +255,7 @@ public class ServiceController {
     private void newReservation() {
         if (ReservationDialog.show(null, LocalDate.now())) {
             showReservations();
+            showTables();
         }
     }
 
@@ -274,46 +280,106 @@ public class ServiceController {
         productsPane.setPrefWrapLength(
                 Math.max(200, panelWidth - 52)
         );
-
-        tablesPane.setPrefWrapLength(
-                Math.max(200, panelWidth - 52)
-        );
     }
 
-    // Tische anzeigen und auswählen
+    // Raumplan: Tische mit Größe und Status (frei / reserviert / besetzt)
 
     private void showTables() {
 
         tablesPane.getChildren().clear();
 
+        List<Order> openOrders = OrderService.getOpenOrders();
+        List<Reservation> reservations = ReservationService.getReservationsOn(LocalDate.now());
+        LocalDateTime now = LocalDateTime.now();
+
         // Tischanzahl aus den gemeinsamen Einstellungen (von der Leitung festgelegt)
         for (int i = 1; i <= RestaurantSettings.get().getTableCount(); i++) {
 
             final int table = i;
+            int seats = RestaurantSettings.get().getCapacity(i);
 
-            Button button = new Button(
-                    String.format("%02d", i)
-            );
+            String status = tableStatus(table, openOrders, reservations);
+            Reservation next = nextReservation(table, reservations, now);
 
-            button.getStyleClass().add("table-tile");
+            String text = String.format("%02d", i) + "\n" + seats + " Plätze";
+            if (status.equals("reserviert") && next != null) {
+                text = text + "\nab " + next.getStart().format(TIME_FORMAT);
+            }
+
+            Button button = new Button(text);
+            button.getStyleClass().addAll("table-tile", sizeClass(seats), "table-" + status);
 
             if (i == selectedTable) {
                 button.getStyleClass().add("selected-table");
             }
 
-            button.setOnAction(e -> {
+            button.setTooltip(new Tooltip(tooltipText(table, seats, status, next)));
+            button.setOnAction(e -> selectTable(table));
 
-                selectedTable = table;
-                selectedProduct = null;
-                demoSpecialRequest = "";
-                noteArea.clear();
-
-                showTables();
-                refresh();
-            });
-
-            tablesPane.getChildren().add(button);
+            int column = (i - 1) % TABLES_PER_ROW;
+            int row = (i - 1) / TABLES_PER_ROW;
+            GridPane.setHalignment(button, HPos.CENTER);
+            tablesPane.add(button, column, row);
         }
+    }
+
+    private String tableStatus(int table, List<Order> openOrders, List<Reservation> reservations) {
+
+        for (Order order : openOrders) {
+            if (order.getTable() == table) {
+                return "besetzt";
+            }
+        }
+
+        for (Reservation reservation : reservations) {
+            if (reservation.getTable() == table
+                    && reservation.getStatus() == ReservationStatus.ANWESEND) {
+                return "besetzt";
+            }
+        }
+
+        // erst 2 Stunden vor der Reservierung als reserviert anzeigen
+        LocalDateTime now = LocalDateTime.now();
+        Reservation next = nextReservation(table, reservations, now);
+        if (next != null && next.getStart().minusHours(2).isBefore(now)) {
+            return "reserviert";
+        }
+
+        return "frei";
+    }
+
+    // nächste bestätigte Reservierung für den Tisch, die heute noch nicht vorbei ist
+    private Reservation nextReservation(int table, List<Reservation> reservations, LocalDateTime now) {
+
+        for (Reservation reservation : reservations) {
+            if (reservation.getTable() == table
+                    && reservation.getStatus() == ReservationStatus.BESTAETIGT
+                    && reservation.getEnd().isAfter(now)) {
+                return reservation;
+            }
+        }
+        return null;
+    }
+
+    private String sizeClass(int seats) {
+        if (seats <= 4) {
+            return "table-small";
+        } else if (seats <= 6) {
+            return "table-medium";
+        } else {
+            return "table-large";
+        }
+    }
+
+    private String tooltipText(int table, int seats, String status, Reservation next) {
+
+        String text = "Tisch " + table + " · " + seats + " Plätze · " + status;
+
+        if (next != null) {
+            text = text + "\nNächste Reservierung: " + next.getStart().format(TIME_FORMAT)
+                    + " " + next.getName() + " (" + next.getPersons() + " Pers.)";
+        }
+        return text;
     }
 
     // Kategorien anzeigen
@@ -526,6 +592,7 @@ public class ServiceController {
         selectedProduct = null;
         demoSpecialRequest = "";
         noteArea.clear();
+        showTables();
         refresh();
 
         info("Bestellung #" + order.getNumber() + " an die Küche gesendet." + stockHint);
