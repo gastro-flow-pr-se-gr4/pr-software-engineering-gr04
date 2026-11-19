@@ -27,6 +27,9 @@ public class Product extends BaseEntity {
         this.available = true;
     }
 
+    public Product(UUID id, String name, BigDecimal price, String description, boolean available) {
+    }
+
     public String getName() {
         return name;
     }

@@ -8,8 +8,9 @@ public class ProductDTO {
     private String name;
     private BigDecimal price;
     private String description;
+    private boolean available;
 
-    public ProductDTO(UUID id, String name, BigDecimal price, String description) {
+    public ProductDTO(UUID id, String name, BigDecimal price, String description, boolean available) {
         this.id = id;
         this.name = name;
         this.price = price;
@@ -30,5 +31,9 @@ public class ProductDTO {
 
     public String getDescription() {
         return description;
+    }
+
+    public boolean isAvailable() {
+        return available;
     }
 }
