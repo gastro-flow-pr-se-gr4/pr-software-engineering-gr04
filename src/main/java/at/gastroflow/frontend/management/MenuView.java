@@ -1,11 +1,11 @@
 package at.gastroflow.frontend.management;
 
-import at.gastroflow.backend.model.Ingredient;
-import at.gastroflow.backend.model.Product;
-import at.gastroflow.backend.model.RecipeItem;
-import at.gastroflow.backend.model.Unit;
-import at.gastroflow.backend.service.InventoryService;
-import at.gastroflow.backend.service.MenuService;
+import at.gastroflow.backend.demo.model.Ingredient;
+import at.gastroflow.backend.demo.model.Product;
+import at.gastroflow.backend.demo.model.RecipeItem;
+import at.gastroflow.backend.demo.model.Unit;
+import at.gastroflow.backend.demo.service.InventoryService;
+import at.gastroflow.backend.demo.service.MenuService;
 import javafx.event.ActionEvent;
 import javafx.geometry.Pos;
 import javafx.scene.Node;

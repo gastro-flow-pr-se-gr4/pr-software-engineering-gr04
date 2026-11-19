@@ -7,7 +7,6 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.event.ActionEvent;
-import javafx.fxml.FXML;
 import javafx.scene.Node;
 
 import java.time.LocalDate;
@@ -15,21 +14,21 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-import at.gastroflow.backend.model.Reservation;
-import at.gastroflow.backend.model.ReservationStatus;
-import at.gastroflow.backend.model.RestaurantSettings;
-import at.gastroflow.backend.service.ReservationService;
+import at.gastroflow.backend.demo.model.Reservation;
+import at.gastroflow.backend.demo.model.ReservationStatus;
+import at.gastroflow.backend.demo.model.RestaurantSettings;
+import at.gastroflow.backend.demo.service.ReservationService;
 import at.gastroflow.frontend.management.ReservationDialog;
 import at.gastroflow.frontend.management.Ui;
 
-import at.gastroflow.backend.model.Order;
-import at.gastroflow.backend.model.OrderItem;
-import at.gastroflow.backend.model.OrderStatus;
-import at.gastroflow.backend.model.Product;
-import at.gastroflow.backend.service.DemoData;
-import at.gastroflow.backend.service.InventoryService;
-import at.gastroflow.backend.service.MenuService;
-import at.gastroflow.backend.service.OrderService;
+import at.gastroflow.backend.demo.model.Order;
+import at.gastroflow.backend.demo.model.OrderItem;
+import at.gastroflow.backend.demo.model.OrderStatus;
+import at.gastroflow.backend.demo.model.Product;
+import at.gastroflow.backend.demo.service.DemoData;
+import at.gastroflow.backend.demo.service.InventoryService;
+import at.gastroflow.backend.demo.service.MenuService;
+import at.gastroflow.backend.demo.service.OrderService;
 
 public class ServiceController {
 

@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: gastroflow-db
+
+    environment:
+      POSTGRES_DB: gastroflow
+      POSTGRES_USER: gastroflow
+      POSTGRES_PASSWORD: gastroflow
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+
+  

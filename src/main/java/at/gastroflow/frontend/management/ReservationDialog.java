@@ -1,9 +1,9 @@
 package at.gastroflow.frontend.management;
 
-import at.gastroflow.backend.model.Reservation;
-import at.gastroflow.backend.model.ReservationStatus;
-import at.gastroflow.backend.model.RestaurantSettings;
-import at.gastroflow.backend.service.ReservationService;
+import at.gastroflow.backend.demo.model.Reservation;
+import at.gastroflow.backend.demo.model.ReservationStatus;
+import at.gastroflow.backend.demo.model.RestaurantSettings;
+import at.gastroflow.backend.demo.service.ReservationService;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
