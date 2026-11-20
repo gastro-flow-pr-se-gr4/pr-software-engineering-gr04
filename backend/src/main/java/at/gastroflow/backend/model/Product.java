@@ -19,15 +19,12 @@ public class Product extends BaseEntity {
     }
 
     //Produkt aus Datenbanl laden
-    public Product(UUID id, String name, BigDecimal price, String description) {
+    public Product(UUID id, String name, BigDecimal price, String description, boolean available) {
         super(id);
         this.name = name;
         this.price = price;
         this.description = description;
         this.available = true;
-    }
-
-    public Product(UUID id, String name, BigDecimal price, String description, boolean available) {
     }
 
     public String getName() {
