@@ -86,12 +86,13 @@ public class ProductDAO {
         }
     }
 
-    public void delete(Product product) throws SQLException {
+    public void delete(UUID id) throws SQLException {
         String sql = "DELETE FROM products WHERE id = ?";
 
         try (Connection connection = DatabaseConnection.getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setObject(1, product.getId());
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+            preparedStatement.setObject(1, id);
             preparedStatement.executeUpdate();
         }
     }
