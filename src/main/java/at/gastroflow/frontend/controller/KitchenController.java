@@ -11,10 +11,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import at.gastroflow.backend.model.Order;
-import at.gastroflow.backend.model.OrderStatus;
-import at.gastroflow.backend.service.DemoData;
-import at.gastroflow.backend.service.OrderService;
+import at.gastroflow.backend.demo.model.Order;
+import at.gastroflow.backend.demo.model.OrderStatus;
+import at.gastroflow.backend.demo.service.DemoData;
+import at.gastroflow.backend.demo.service.OrderService;
 
 public class KitchenController {
 

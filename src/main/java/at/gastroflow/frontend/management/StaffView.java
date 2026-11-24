@@ -1,8 +1,8 @@
 package at.gastroflow.frontend.management;
 
-import at.gastroflow.backend.model.Employee;
-import at.gastroflow.backend.model.EmployeeStatus;
-import at.gastroflow.backend.service.StaffService;
+import at.gastroflow.backend.demo.model.Employee;
+import at.gastroflow.backend.demo.model.EmployeeStatus;
+import at.gastroflow.backend.demo.service.StaffService;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;

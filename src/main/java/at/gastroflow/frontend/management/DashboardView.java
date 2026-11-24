@@ -1,9 +1,9 @@
 package at.gastroflow.frontend.management;
 
-import at.gastroflow.backend.model.Ingredient;
-import at.gastroflow.backend.model.RestaurantSettings;
-import at.gastroflow.backend.service.AnalyticsService;
-import at.gastroflow.backend.service.InventoryService;
+import at.gastroflow.backend.demo.model.Ingredient;
+import at.gastroflow.backend.demo.model.RestaurantSettings;
+import at.gastroflow.backend.demo.service.AnalyticsService;
+import at.gastroflow.backend.demo.service.InventoryService;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.chart.BarChart;
