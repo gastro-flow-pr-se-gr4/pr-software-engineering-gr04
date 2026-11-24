@@ -24,7 +24,7 @@ public class Product extends BaseEntity {
         this.name = name;
         this.price = price;
         this.description = description;
-        this.available = true;
+        this.available = available;
     }
 
     public String getName() {

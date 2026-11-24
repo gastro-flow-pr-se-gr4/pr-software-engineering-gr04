@@ -15,6 +15,7 @@ public class ProductDTO {
         this.name = name;
         this.price = price;
         this.description = description;
+        this.available = available;
     }
 
     public UUID getId() {

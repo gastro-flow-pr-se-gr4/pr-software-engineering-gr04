@@ -20,35 +20,13 @@ public class ProductService {
     }
 
     public void saveProduct(Product product) throws SQLException{
-        if(product == null){
-            throw new IllegalArgumentException("Produkt darf nicht null sein!");
-        }
-
-        if(product.getName() == null || product.getName().isEmpty()){
-            throw new IllegalArgumentException("Produktname darf nicht leer sein!");
-        }
-
-        if(product.getPrice() == null || product.getPrice().compareTo(BigDecimal.ZERO) < 0 ){
-            throw new IllegalArgumentException("Preis darf nicht kleiner 0 sein!");
-        }
-
+        checkProduct(product);
         productDAO.save(product);
     }
 
     public void updateProduct(Product product) throws SQLException{
-        if(product == null){
-            throw new IllegalArgumentException("Produkt darf nicht null sein!");
-        }
-
-        if(product.getName() == null || product.getName().isEmpty()){
-            throw new IllegalArgumentException("Produktname darf nicht leer sein!");
-        }
-
-        if(product.getPrice() == null || product.getPrice().compareTo(BigDecimal.ZERO) < 0 ){
-            throw new IllegalArgumentException("Preis darf nicht kleiner 0 sein!");
-        }
-
-        productDAO.update(product);
+        checkProduct(product);
+        productDAO.save(product);
     }
 
     public void deleteProduct(UUID id) throws SQLException{
@@ -57,6 +35,22 @@ public class ProductService {
         }
         productDAO.delete(id);
     }
+
+    public void checkProduct(Product product){
+        if(product == null){
+            throw new IllegalArgumentException("Produkt darf nicht null sein!");
+        }
+
+        if(product.getName() == null || product.getName().isEmpty()){
+            throw new IllegalArgumentException("Produktname darf nicht leer sein oder fehlt!");
+        }
+
+        if(product.getPrice() == null || product.getPrice().compareTo(BigDecimal.ZERO) < 0 ){
+            throw new IllegalArgumentException("Preis darf nicht kleiner 0 sein, oder fehlt!");
+        }
+    }
+
+
 
 
 }
