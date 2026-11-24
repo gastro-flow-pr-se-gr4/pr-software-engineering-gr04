@@ -138,6 +138,8 @@ public class KitchenController {
         Button button = new Button(text);
         button.getStyleClass().add("primary-button");
         button.setMaxWidth(Double.MAX_VALUE);
+        button.setWrapText(true);
+        button.setMinHeight(Region.USE_PREF_SIZE);
 
         button.setOnAction(event -> {
             try {

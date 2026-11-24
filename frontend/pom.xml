@@ -12,6 +12,10 @@
 
     <artifactId>frontend</artifactId>
 
+    <properties>
+        <javafx.skip>false</javafx.skip>
+    </properties>
+
     <!-- Der Code der JavaFX-App liegt im Ordner src des Hauptprojekts -->
     <build>
         <sourceDirectory>${project.basedir}/../src/main/java</sourceDirectory>

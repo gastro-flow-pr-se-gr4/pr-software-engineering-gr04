@@ -26,7 +26,10 @@ public class OrderDraft {
         public int getQuantity() { return quantity; }
 
         public String getNote() { return note; }
-        public void setNote(String note) { this.note = note == null ? "" : note.trim(); }
+
+        public void setNote(String note) {
+            this.note = note == null ? "" : note.trim().replaceAll("\\s*\\R\\s*", ", "); // immer einzeilig
+        }
 
         public double getTotal() {
             return roundToCents(product.getPrice() * quantity);
@@ -50,10 +53,13 @@ public class OrderDraft {
     public boolean isSent() { return sent; }
     public void markSent() { sent = true; }
 
-    /** Fügt ein Produkt hinzu. Ist es schon enthalten, wird die Menge um 1 erhöht. */
+    /**
+     * Fügt ein Produkt hinzu. Gibt es schon eine Position ohne Sonderwunsch, wird deren Menge erhöht.
+     * Positionen mit Sonderwunsch bleiben getrennt, sonst würde der Wunsch für alle Stück gelten.
+     */
     public Line add(Product product) {
         for (Line line : lines) {
-            if (line.product == product) {
+            if (line.product == product && line.note.isEmpty()) {
                 increase(line);
                 return line;
             }
@@ -94,11 +100,11 @@ public class OrderDraft {
         return lines.stream().mapToInt(Line::getQuantity).sum();
     }
 
-    /** Alle Sonderwünsche für die Küche, einer pro Zeile, z. B. "Classic Burger: ohne Zwiebeln". */
+    /** Alle Sonderwünsche für die Küche, einer pro Zeile, z. B. "1× Classic Burger: ohne Zwiebeln". */
     public String getNoteText() {
         return lines.stream()
                 .filter(line -> !line.note.isEmpty())
-                .map(line -> line.product.getName() + ": " + line.note)
+                .map(line -> line.quantity + "× " + line.product.getName() + ": " + line.note)
                 .collect(Collectors.joining("\n"));
     }
 

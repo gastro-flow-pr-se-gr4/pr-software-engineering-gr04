@@ -63,7 +63,7 @@ public class AnalyticsService {
     public static Set<Integer> occupiedTables(LocalDateTime now) {
         Set<Integer> tables = new TreeSet<>();
         for (Order order : OrderService.getSentOrders()) {
-            if (order.isOpen() || order.isPaymentDue()) {
+            if (order.isActive()) {
                 tables.add(order.getTable());
             }
         }

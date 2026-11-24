@@ -124,7 +124,7 @@ class OrderServiceTest {
         assertEquals(2, order.getItems().size());
         assertEquals(2, order.getItems().get(0).getQuantity());
         assertEquals(draft.getTotal(), order.getTotal(), 0.001);
-        assertEquals("Classic Burger: ohne Zwiebeln", order.getNote());
+        assertEquals("2× Classic Burger: ohne Zwiebeln", order.getNote());
         assertTrue(InventoryService.isBooked(order));
     }
 
@@ -232,9 +232,6 @@ class OrderServiceTest {
 
     /** Offene Reste anderer Tests am Tisch abschließen. */
     private void clearTable(int table) {
-        for (Order order : OrderService.getUnpaidOrders(table)) {
-            OrderService.changeStatus(order, OrderStatus.FERTIG);
-        }
         if (OrderService.getAmountDue(table) > 0) {
             OrderService.payTable(table);
         }
@@ -278,14 +275,26 @@ class OrderServiceTest {
     void payingClearsTheBillAndFreesTheTable() {
         clearTable(BILL_TABLE);
         Order order = sendTo(BILL_TABLE, burger);
-        OrderService.changeStatus(order, OrderStatus.FERTIG);
+        OrderService.changeStatus(order, OrderStatus.ABGESCHLOSSEN); // serviert
 
         assertEquals(burger.getPrice(), OrderService.payTable(BILL_TABLE), 0.001);
 
         assertTrue(order.isPaid());
-        assertEquals(OrderStatus.ABGESCHLOSSEN, order.getStatus());
         assertEquals(0, OrderService.getAmountDue(BILL_TABLE));
         assertFalse(OrderService.isTableOccupied(BILL_TABLE));
+    }
+
+    @Test
+    void readyFoodDoesNotDisappearWhenTheTablePays() {
+        clearTable(BILL_TABLE);
+        Order order = sendTo(BILL_TABLE, burger);
+        OrderService.changeStatus(order, OrderStatus.FERTIG);
+
+        OrderService.payTable(BILL_TABLE);
+
+        assertEquals(OrderStatus.FERTIG, order.getStatus()); // muss noch serviert werden
+        assertTrue(OrderService.getOpenOrders().contains(order));
+        assertTrue(OrderService.isTableOccupied(BILL_TABLE));
     }
 
     @Test
@@ -401,6 +410,41 @@ class OrderServiceTest {
 
         Order order = OrderService.submit(draft, "Service");
 
-        assertEquals("Classic Burger: ohne Zwiebeln\n" + cola.getName() + ": ohne Eis", order.getNote());
+        assertEquals("1× Classic Burger: ohne Zwiebeln\n1× " + cola.getName() + ": ohne Eis", order.getNote());
+    }
+
+    @Test
+    void sameProductWithAndWithoutRequestAreSeparateLines() {
+        OrderDraft.Line withRequest = draft.add(burger);
+        withRequest.setNote("ohne Zwiebeln");
+        OrderDraft.Line normal = draft.add(burger);
+
+        assertEquals(2, draft.getLines().size());
+        assertEquals("", normal.getNote());
+        assertEquals("1× Classic Burger: ohne Zwiebeln", draft.getNoteText());
+        assertEquals(2 * burger.getPrice(), draft.getTotal(), 0.001);
+    }
+
+    @Test
+    void lineBreaksInARequestStayOnOneLine() {
+        draft.add(burger).setNote("ohne Zwiebeln\n\n  extra Käse");
+
+        assertEquals("1× Classic Burger: ohne Zwiebeln, extra Käse", draft.getNoteText());
+    }
+
+    @Test
+    void stockIsBookedOnceForSplitLines() {
+        draft.add(burger).setNote("ohne Zwiebeln");
+        draft.add(burger);
+
+        long before = bunStock();
+        OrderService.submit(draft, "Service");
+
+        assertEquals(before - 2, bunStock());
+    }
+
+    private long bunStock() {
+        return InventoryService.getIngredients(true).stream()
+                .filter(i -> i.getName().equals("Burgerbrötchen")).findFirst().orElseThrow().getStock();
     }
 }

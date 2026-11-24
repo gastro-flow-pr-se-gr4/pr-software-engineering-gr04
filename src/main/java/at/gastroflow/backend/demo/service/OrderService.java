@@ -108,7 +108,7 @@ public class OrderService {
     /** Alles, was an einem Tisch noch läuft: unbezahlt oder bezahlt, aber noch nicht serviert. */
     public static List<Order> getActiveOrders(int table) {
         return SENT_ORDERS.stream()
-                .filter(order -> order.getTable() == table && (order.isOpen() || order.isPaymentDue()))
+                .filter(order -> order.getTable() == table && order.isActive())
                 .sorted(Comparator.comparing(Order::getCreatedAt))
                 .toList();
     }
@@ -119,16 +119,16 @@ public class OrderService {
         return Math.round(sum * 100) / 100.0;
     }
 
-    /** Ein Tisch ist besetzt, solange etwas in der Küche oder noch nicht bezahlt ist. */
+    /** Ein Tisch ist besetzt, solange etwas nicht serviert oder nicht bezahlt ist. */
     public static boolean isTableOccupied(int table) {
         return SENT_ORDERS.stream()
-                .anyMatch(order -> order.getTable() == table && (order.isOpen() || order.isPaymentDue()));
+                .anyMatch(order -> order.getTable() == table && order.isActive());
     }
 
     /**
      * Kassiert alle offenen Bestellungen eines Tisches ab und gibt den bezahlten Betrag zurück.
-     * Fertige Bestellungen gelten damit als abgeschlossen, anwesende Reservierungen werden beendet.
-     * Was noch in der Küche ist, bleibt dort und hält den Tisch besetzt.
+     * Anwesende Reservierungen werden beendet. Was noch nicht serviert ist, bleibt sichtbar
+     * und hält den Tisch besetzt.
      */
     public static synchronized double payTable(int table) {
         List<Order> unpaid = getUnpaidOrders(table);
@@ -140,9 +140,6 @@ public class OrderService {
 
         for (Order order : unpaid) {
             order.markPaid(now);
-            if (order.getStatus() == OrderStatus.FERTIG) {
-                order.setStatus(OrderStatus.ABGESCHLOSSEN);
-            }
         }
         for (Reservation reservation : ReservationService.getReservationsOn(now.toLocalDate())) {
             if (reservation.getTable() == table && reservation.getStatus() == ReservationStatus.ANWESEND) {
@@ -177,7 +174,8 @@ public class OrderService {
         order.setStatus(next);
     }
 
-    public static void changeStatus(Order order, OrderStatus status) {
+    /** Setzt den Status ohne Prüfung – nur für Tests. Die App nutzt die Schritte oben. */
+    static void changeStatus(Order order, OrderStatus status) {
         order.setStatus(status);
     }
 

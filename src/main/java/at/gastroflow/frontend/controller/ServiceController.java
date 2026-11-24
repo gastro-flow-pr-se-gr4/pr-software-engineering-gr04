@@ -683,11 +683,14 @@ public class ServiceController {
     @FXML
     private void discard() {
 
+        if (!Ui.confirm("Bestellung für Tisch " + selectedTable + " mit " + draft().getItemCount()
+                + " Artikeln verwerfen?", "Verwerfen")) {
+            return;
+        }
+
         selectLine(null);
         DRAFTS.remove(selectedTable);
         refresh();
-
-        info("Bestellung verworfen.");
     }
 
     @FXML
@@ -737,15 +740,14 @@ public class ServiceController {
 
         int table = selectedTable;
         double amount = OrderService.getAmountDue(table);
-        long inKitchen = OrderService.getUnpaidOrders(table).stream()
-                .filter(order -> order.getStatus() == OrderStatus.NEU
-                        || order.getStatus() == OrderStatus.IN_ZUBEREITUNG)
+        long notServed = OrderService.getUnpaidOrders(table).stream()
+                .filter(Order::isOpen)
                 .count();
 
         String question = "Tisch " + table + " abkassieren?\n\nZu zahlen: " + formatPrice(amount);
-        if (inKitchen > 0) {
-            question += "\n\nAchtung: " + (inKitchen == 1 ? "1 Bestellung ist" : inKitchen + " Bestellungen sind")
-                    + " noch nicht fertig. Der Tisch bleibt besetzt, bis die Küche fertig ist.";
+        if (notServed > 0) {
+            question += "\n\nAchtung: " + (notServed == 1 ? "1 Bestellung ist" : notServed + " Bestellungen sind")
+                    + " noch nicht serviert. Der Tisch bleibt besetzt, bis alles serviert ist.";
         }
         if (!Ui.confirm(question, "Bezahlt")) {
             return;
@@ -792,6 +794,7 @@ public class ServiceController {
 
     @FXML
     private void handleLogout(ActionEvent event) {
+        storeNote(); // eingetippten Sonderwunsch nicht verlieren
         Navigation.toLogin((Node) event.getSource());
     }
 

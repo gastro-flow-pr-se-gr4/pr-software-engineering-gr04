@@ -72,6 +72,11 @@ public class Order {
         return status != OrderStatus.ABGESCHLOSSEN && status != OrderStatus.STORNIERT;
     }
 
+    /** Läuft noch: nicht fertig serviert oder nicht bezahlt. */
+    public boolean isActive() {
+        return isOpen() || isPaymentDue();
+    }
+
     public double getTotal() {
         return items.stream().mapToDouble(OrderItem::getTotal).sum();
     }
