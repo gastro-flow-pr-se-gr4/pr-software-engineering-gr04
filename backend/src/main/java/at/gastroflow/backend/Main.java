@@ -25,41 +25,38 @@ public class Main {
         }
 
 
-    try{
-        ProductService productService = new ProductService();
+        try {
+            ProductService productService = new ProductService();
+            //Neue Produkte Speichern
+            Product product = new Product("Wiener Schnitzel", new BigDecimal("14.50"), "Mit Pommes auf Wunsch auch mit Reis oder Kartoffeln", true);
+            productService.saveProduct(product);
+            System.out.println("Produkt gespeichert!");
 
-        //Neue Produkte Speichern
-        Product product = new Product("Wiener Schnitzel", new BigDecimal("14.50"), "Mit Pommes auf Wunsch auch mit Reis oder Kartoffeln", true);
-        productService.saveProduct(product);
+            //Alle anzeigen
+            System.out.println("Gespeicherte Produkte: ");
+            for (Product p : productService.getAllProducts()) {
+                System.out.println(p.getName() + " - " + p.getPrice() + " €");
+            }
 
-        System.out.println("Produkt gespeichert!");
+            //Mit ID suchen
+            Product found = productService.getProductById(product.getId());
+            if (found != null) {
+                System.out.println("Produkt gefunden: " + found.getName());
+            }
 
-        //Alle anzeigen
-        System.out.println("Gespeicherte Produkte: ");
-        for (Product p : productService.getAllProducts()) {
-            System.out.println(p.getName() + " - " + p.getPrice() + " €");
+            //Bearbeiten
+            Product change = new Product(product.getId(), "Wiener Schnitzel", new BigDecimal("15.90"), "Mit Pommes oder Reis", true);
+            productService.updateProduct(change);
+            System.out.println("Produkt bearbeitet!");
+            productService.deleteProduct(product.getId());
+            System.out.println("Produkt löschen!");
+        } catch (SQLException e) {
+            System.out.println("Fehler beim Speichern des Produktes!");
+            System.out.println(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            System.out.println("Ungültige Produktdaten!");
+            System.out.println(e.getMessage());
         }
-
-        //Mit ID suchen
-        Product found = productService.getProductById(product.getId());
-        if(found != null){
-            System.out.println("Produkt gefunden: " + found.getName());
-        }
-
-        //Bearbeiten
-        Product change = new Product(product.getId(),  "Wiener Schnitzel", new BigDecimal("15.90"), "Mit Pommes oder Reis", true);
-        productService.updateProduct(change);
-        System.out.println("Produkt bearbeitet!");
-
-        productService.deleteProduct(product.getId());
-        System.out.println("Produkt löschen!");
-    } catch(SQLException e) {
-        System.out.println("Fehler beim Speichern des Produktes!");
-        System.out.println(e.getMessage());
-    } catch (IllegalArgumentException e) {
-        System.out.println("Ungültige Produktdaten!");
-        System.out.println(e.getMessage());
-    }
     }
 }
 
