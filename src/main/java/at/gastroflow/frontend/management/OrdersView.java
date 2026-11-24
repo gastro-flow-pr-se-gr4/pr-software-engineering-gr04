@@ -141,7 +141,7 @@ public class OrdersView {
 
         HBox action = new HBox();
         action.setMinWidth(90);
-        if (order.isOpen()) {
+        if (order.isOpen() && !order.isPaid()) {
             action.getChildren().add(Ui.small("Stornieren", () -> cancel(order)));
         }
 

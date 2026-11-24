@@ -12,7 +12,9 @@ import javafx.scene.Node;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import at.gastroflow.backend.demo.model.Reservation;
 import at.gastroflow.backend.demo.model.ReservationStatus;
@@ -22,6 +24,7 @@ import at.gastroflow.frontend.management.ReservationDialog;
 import at.gastroflow.frontend.management.Ui;
 
 import at.gastroflow.backend.demo.model.Order;
+import at.gastroflow.backend.demo.model.OrderDraft;
 import at.gastroflow.backend.demo.model.OrderItem;
 import at.gastroflow.backend.demo.model.OrderStatus;
 import at.gastroflow.backend.demo.model.Product;
@@ -37,7 +40,7 @@ public class ServiceController {
     @FXML private FlowPane productsPane;
     @FXML private VBox currentItems, paidItems;
     @FXML private Label currentTitle, totalLabel, paidTitle;
-    @FXML private Label paidTotal, counterLabel;
+    @FXML private Label paidTotal, counterLabel, noteTarget, sendError;
     @FXML private TextArea noteArea;
     @FXML private Button discardButton, sendButton, payButton;
     @FXML private FlowPane categoryTabs;
@@ -55,8 +58,10 @@ public class ServiceController {
     // Produkte kommen aus der gemeinsamen Speisekarte (von der Leitung verwaltet)
     private int selectedTable = 4;
     private String category = null;
-    private Product selectedProduct = null;
-    private String demoSpecialRequest = "";
+
+    // Angefangene Bestellung pro Tisch – bleibt beim Tischwechsel und Abmelden erhalten
+    private static final Map<Integer, OrderDraft> DRAFTS = new HashMap<>();
+    private OrderDraft.Line selectedLine = null;
 
     @FXML
     private void initialize() {
@@ -100,6 +105,7 @@ public class ServiceController {
 
         noteArea.setPromptText("Zuerst ein Gericht auswählen ...");
 
+        selectLine(null);
         showTables();
         showTabs();
         showProducts();
@@ -237,10 +243,9 @@ public class ServiceController {
 
     // Wählt einen Tisch für die neue Bestellung aus
     private void selectTable(int table) {
+        storeNote();
         selectedTable = table;
-        selectedProduct = null;
-        demoSpecialRequest = "";
-        noteArea.clear();
+        selectLine(null);
         showTables();
         refresh();
     }
@@ -264,7 +269,7 @@ public class ServiceController {
         boolean sideBySide = available >= 1080;
 
         double panelWidth = sideBySide
-                ? (available - 24) / 2
+                ? Math.floor((available - 24) / 2)
                 : available;
 
         orderPanel.setPrefWidth(panelWidth);
@@ -283,7 +288,6 @@ public class ServiceController {
 
         tablesPane.getChildren().clear();
 
-        List<Order> openOrders = OrderService.getOpenOrders();
         List<Reservation> reservations = ReservationService.getReservationsOn(LocalDate.now());
         LocalDateTime now = LocalDateTime.now();
 
@@ -293,12 +297,19 @@ public class ServiceController {
             final int table = i;
             int seats = RestaurantSettings.get().getCapacity(i);
 
-            String status = tableStatus(table, openOrders, reservations);
+            String status = tableStatus(table, reservations);
             Reservation next = nextReservation(table, reservations, now);
 
             String text = String.format("%02d", i) + "\n" + seats + " Plätze";
             if (status.equals("reserviert") && next != null) {
                 text = text + "\nab " + next.getStart().format(TIME_FORMAT);
+            }
+
+            // Hinweis, dass die Küche etwas fertig hat
+            boolean ready = OrderService.getActiveOrders(table).stream()
+                    .anyMatch(order -> order.getStatus() == OrderStatus.FERTIG);
+            if (ready) {
+                text = text + "\n● fertig";
             }
 
             Button button = new Button(text);
@@ -318,12 +329,10 @@ public class ServiceController {
         }
     }
 
-    private String tableStatus(int table, List<Order> openOrders, List<Reservation> reservations) {
+    private String tableStatus(int table, List<Reservation> reservations) {
 
-        for (Order order : openOrders) {
-            if (order.getTable() == table) {
-                return "besetzt";
-            }
+        if (OrderService.isTableOccupied(table)) {
+            return "besetzt";
         }
 
         for (Reservation reservation : reservations) {
@@ -431,10 +440,8 @@ public class ServiceController {
 
             tile.setOnMouseClicked(e -> {
 
-                selectedProduct = product;
-                demoSpecialRequest = "";
-                noteArea.clear();
-
+                storeNote();
+                selectLine(draft().add(product));
                 refresh();
             });
 
@@ -452,13 +459,110 @@ public class ServiceController {
 
     private void saveSpecialRequest() {
 
-        if (selectedProduct == null) {
+        if (selectedLine == null) {
             warning("Bitte zuerst ein Produkt auswählen.");
             return;
         }
 
-        demoSpecialRequest = noteArea.getText().trim();
+        storeNote();
         refresh();
+    }
+
+    // Übernimmt den eingetippten Text, damit kein Sonderwunsch verloren geht
+    private void storeNote() {
+        if (selectedLine != null) {
+            selectedLine.setNote(noteArea.getText());
+        }
+    }
+
+    // Wählt die Position aus, zu der der Sonderwunsch gehört
+    private void selectLine(OrderDraft.Line line) {
+        selectedLine = line;
+        noteArea.setText(line == null ? "" : line.getNote());
+        noteArea.setDisable(line == null);
+        noteTarget.setText(line == null ? "" : "für " + line.getProduct().getName());
+    }
+
+    // Angefangene Bestellung für den ausgewählten Tisch
+    private OrderDraft draft() {
+        return DRAFTS.computeIfAbsent(selectedTable, OrderDraft::new);
+    }
+
+    // Eine Position mit Plus, Minus und Entfernen
+    private VBox orderLine(OrderDraft.Line line) {
+
+        Label qty = new Label(String.valueOf(line.getQuantity()));
+        qty.getStyleClass().add("qty");
+
+        Label name = new Label(line.getProduct().getName());
+        name.setWrapText(true);
+        name.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(name, Priority.ALWAYS);
+
+        Button minus = lineButton("−", "Menge verringern", () -> draft().decrease(line));
+        minus.setDisable(line.getQuantity() <= 1);
+
+        Button plus = lineButton("+", "Menge erhöhen", () -> draft().increase(line));
+        plus.setDisable(line.getQuantity() >= OrderDraft.MAX_QUANTITY);
+
+        Button remove = lineButton("✕", "Position entfernen", () -> {
+            draft().remove(line);
+            if (line == selectedLine) {
+                selectLine(null);
+            }
+        });
+        remove.getStyleClass().add("remove-action");
+
+        Label price = new Label(formatPrice(line.getTotal()));
+        price.getStyleClass().add("line-price");
+
+        HBox row = new HBox(12, qty, name, minus, plus, remove, price);
+        row.setAlignment(Pos.CENTER_LEFT);
+
+        VBox box = new VBox(6, row);
+        box.getStyleClass().addAll("item-row", "order-line");
+        if (line == selectedLine) {
+            box.getStyleClass().add("selected-line");
+        }
+
+        if (!line.getNote().isEmpty()) {
+            Label request = new Label("↳ " + line.getNote());
+            request.setWrapText(true);
+            request.getStyleClass().add("line-note");
+            box.getChildren().add(request);
+        }
+
+        // Anklicken wählt die Position für den Sonderwunsch aus
+        box.setOnMouseClicked(e -> {
+            if (!draft().getLines().contains(line)) {
+                return; // wurde gerade entfernt
+            }
+            storeNote();
+            selectLine(line);
+            refresh();
+        });
+        return box;
+    }
+
+    private Button lineButton(String text, String description, Runnable action) {
+        Button button = new Button(text);
+        button.getStyleClass().add("small-action");
+        button.setMinWidth(Region.USE_PREF_SIZE);
+        button.setTooltip(new Tooltip(description));
+        button.setAccessibleText(description);
+        button.setOnAction(e -> {
+            storeNote();
+            action.run();
+            refresh();
+        });
+        return button;
+    }
+
+    // Fehler beim Absenden anzeigen (null = kein Fehler)
+    private void showSendError(String message) {
+        sendError.setText(message == null ? "" : message);
+        sendError.setVisible(message != null);
+        sendError.setManaged(message != null);
     }
 
 
@@ -476,97 +580,111 @@ public class ServiceController {
 
         currentItems.getChildren().clear();
 
-        if (selectedProduct == null) {
+        OrderDraft draft = draft();
 
-            Label empty = new Label(
-                    "Noch keine Artikel – rechts ein Produkt auswählen."
-            );
-
+        if (draft.isEmpty()) {
+            Label empty = new Label("Noch keine Artikel – rechts ein Produkt auswählen.");
             empty.getStyleClass().add("muted");
             currentItems.getChildren().add(empty);
-
-        } else {
-
-            VBox itemBox = new VBox(4);
-
-            HBox line = new HBox(12);
-            line.setAlignment(Pos.CENTER_LEFT);
-            line.getStyleClass().add("item-row");
-
-            Label qty = new Label("1");
-            qty.getStyleClass().add("qty");
-
-            Label name = new Label(selectedProduct.getName());
-            name.setWrapText(true);
-
-            HBox.setHgrow(name, Priority.ALWAYS);
-            name.setMaxWidth(Double.MAX_VALUE);
-
-            Button minus = new Button("−");
-            minus.getStyleClass().add("small-action");
-
-            minus.setOnAction(e -> {});
-
-            Button plus = new Button("+");
-            plus.getStyleClass().add("small-action");
-
-            plus.setOnAction(e -> {});
-
-            Label price = new Label(formatPrice(selectedProduct.getPrice()));
-            price.getStyleClass().add("line-price");
-
-            line.getChildren().addAll(
-                    qty, name, minus, plus, price
-            );
-
-            itemBox.getChildren().add(line);
-
-            if (!demoSpecialRequest.isEmpty()) {
-
-                Label request = new Label(
-                        "↳ " + demoSpecialRequest
-                );
-
-                request.setWrapText(true);
-
-                request.setStyle(
-                        "-fx-text-fill: #64748b;" +
-                                "-fx-font-size: 12px;" +
-                                "-fx-padding: 0 0 8 35;"
-                );
-
-                itemBox.getChildren().add(request);
-            }
-
-            currentItems.getChildren().add(itemBox);
         }
 
-        totalLabel.setText(formatPrice(selectedProduct == null ? 0 : selectedProduct.getPrice()));
+        for (OrderDraft.Line line : draft.getLines()) {
+            currentItems.getChildren().add(orderLine(line));
+        }
 
-        discardButton.setDisable(selectedProduct == null);
-        sendButton.setDisable(selectedProduct == null);
+        totalLabel.setText(formatPrice(draft.getTotal()));
+
+        // Leere Bestellungen können nicht gesendet werden
+        discardButton.setDisable(draft.isEmpty());
+        sendButton.setDisable(draft.isEmpty());
+        showSendError(null);
+
+        showBill();
+    }
+
+    // Alle laufenden Bestellungen des Tisches; zu zahlen sind nur die unbezahlten
+    private void showBill() {
 
         paidItems.getChildren().clear();
+        List<Order> active = OrderService.getActiveOrders(selectedTable);
+        List<Order> unpaid = OrderService.getUnpaidOrders(selectedTable);
 
-        Label paidEmpty = new Label(
-                "Noch keine gesendeten Bestellungen."
-        );
+        if (active.isEmpty()) {
+            Label empty = new Label("Nichts offen – für diesen Tisch gibt es keine laufenden Bestellungen.");
+            empty.getStyleClass().add("muted");
+            empty.setWrapText(true);
+            paidItems.getChildren().add(empty);
+        }
 
-        paidEmpty.getStyleClass().add("muted");
-        paidItems.getChildren().add(paidEmpty);
+        for (Order order : active) {
+            paidItems.getChildren().add(billOrder(order));
+        }
 
-        paidTotal.setText("0,00 €");
-        payButton.setDisable(false);
+        paidTotal.setText(formatPrice(OrderService.getAmountDue(selectedTable)));
+        payButton.setDisable(unpaid.isEmpty());
+    }
+
+    private VBox billOrder(Order order) {
+
+        Label title = new Label("Bestellung #" + order.getNumber()
+                + " · " + order.getCreatedAt().format(TIME_FORMAT) + " Uhr");
+        title.getStyleClass().add("res-name");
+
+        Region space = new Region();
+        HBox.setHgrow(space, Priority.ALWAYS);
+
+        // abgeschlossen heißt hier: serviert, aber noch nicht bezahlt
+        String status = order.getStatus() == OrderStatus.ABGESCHLOSSEN
+                ? "Serviert" : order.getStatus().toString();
+
+        HBox heading = new HBox(10, title, space);
+        heading.setAlignment(Pos.CENTER_LEFT);
+        if (order.isPaid()) {
+            heading.getChildren().add(Ui.badge("Bezahlt", "gray"));
+        }
+        heading.getChildren().add(Ui.badge(status, Ui.orderColor(order.getStatus())));
+
+        VBox box = new VBox(6, heading);
+        box.getStyleClass().add("item-row");
+
+        for (OrderItem item : order.getItems()) {
+            Label name = new Label(item.getQuantity() + "× " + item.getProductName());
+            name.setWrapText(true);
+            name.setMaxWidth(Double.MAX_VALUE);
+            HBox.setHgrow(name, Priority.ALWAYS);
+
+            Label price = new Label(formatPrice(item.getTotal()));
+            price.getStyleClass().add("line-price");
+            box.getChildren().add(new HBox(12, name, price));
+        }
+
+        if (!order.getNote().isBlank()) {
+            Label note = new Label("↳ " + order.getNote().replace("\n", "\n↳ "));
+            note.getStyleClass().add("muted");
+            note.setWrapText(true);
+            box.getChildren().add(note);
+        }
+
+        if (order.getStatus() == OrderStatus.FERTIG) {
+            box.getChildren().add(actionButton("Serviert", () -> {
+                try {
+                    OrderService.markServed(order);
+                } catch (IllegalStateException e) {
+                    warning(e.getMessage());
+                }
+                showTables();
+                refresh();
+            }));
+        }
+        return box;
     }
 
 
     @FXML
     private void discard() {
 
-        selectedProduct = null;
-        demoSpecialRequest = "";
-        noteArea.clear();
-
+        selectLine(null);
+        DRAFTS.remove(selectedTable);
         refresh();
 
         info("Bestellung verworfen.");
@@ -575,28 +693,31 @@ public class ServiceController {
     @FXML
     private void send() {
 
-        if (selectedProduct == null) {
-            warning("Bitte zuerst ein Produkt auswählen.");
+        storeNote();
+        OrderDraft draft = draft();
+
+        // Echte Bestellung anlegen – die Zutaten werden dabei automatisch vom Lager abgebucht
+        Order order;
+        try {
+            order = OrderService.submit(draft, "Service");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            showSendError(e.getMessage()); // die Bestellung bleibt zum Korrigieren erhalten
             return;
         }
 
-        // Echte Bestellung anlegen – die Zutaten werden dabei automatisch vom Lager abgebucht
-        Order order = new Order(selectedTable, "Service", LocalDateTime.now(), 1,
-                List.of(new OrderItem(selectedProduct, 1)), OrderStatus.NEU);
-        order.setNote(demoSpecialRequest);
-        OrderService.send(order);
-
-        String stockHint = InventoryService.problemFor(order)
-                .map(problem -> "\n\nHinweis Lager: " + problem)
-                .orElse("");
-
-        selectedProduct = null;
-        demoSpecialRequest = "";
-        noteArea.clear();
+        // Entwurf leeren, bevor die Bestätigung erscheint – so ist kein zweites Absenden möglich
+        DRAFTS.remove(selectedTable);
+        selectLine(null);
         showTables();
         refresh();
 
-        info("Bestellung #" + order.getNumber() + " an die Küche gesendet." + stockHint);
+        String confirmation = "Bestellung #" + order.getNumber() + " für Tisch " + order.getTable()
+                + " wurde an die Küche gesendet.\n\n"
+                + draft.getItemCount() + " Artikel · " + formatPrice(order.getTotal());
+
+        InventoryService.problemFor(order).ifPresentOrElse(
+                problem -> warning(confirmation + "\n\nHinweis Lager: " + problem),
+                () -> info(confirmation));
     }
 
     // Kategorien der Speisekarte, in denen es aktive Produkte gibt
@@ -614,7 +735,33 @@ public class ServiceController {
     @FXML
     private void pay() {
 
-        info("Tisch als bezahlt markiert.");
+        int table = selectedTable;
+        double amount = OrderService.getAmountDue(table);
+        long inKitchen = OrderService.getUnpaidOrders(table).stream()
+                .filter(order -> order.getStatus() == OrderStatus.NEU
+                        || order.getStatus() == OrderStatus.IN_ZUBEREITUNG)
+                .count();
+
+        String question = "Tisch " + table + " abkassieren?\n\nZu zahlen: " + formatPrice(amount);
+        if (inKitchen > 0) {
+            question += "\n\nAchtung: " + (inKitchen == 1 ? "1 Bestellung ist" : inKitchen + " Bestellungen sind")
+                    + " noch nicht fertig. Der Tisch bleibt besetzt, bis die Küche fertig ist.";
+        }
+        if (!Ui.confirm(question, "Bezahlt")) {
+            return;
+        }
+
+        try {
+            double paid = OrderService.payTable(table);
+            showTables();
+            showReservations();
+            refresh();
+            info("Tisch " + table + ": " + formatPrice(paid) + " bezahlt."
+                    + (OrderService.isTableOccupied(table) ? "" : " Der Tisch ist frei."));
+        } catch (IllegalStateException e) {
+            refresh();
+            warning(e.getMessage());
+        }
     }
 
     private void info(String message) {

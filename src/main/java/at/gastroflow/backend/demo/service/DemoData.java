@@ -71,7 +71,9 @@ public class DemoData {
             times.sort(null);
 
             for (LocalDateTime time : times) {
-                OrderService.addExisting(randomOrder(random, time, 1 + random.nextInt(12), OrderStatus.ABGESCHLOSSEN));
+                Order order = randomOrder(random, time, 1 + random.nextInt(12), OrderStatus.ABGESCHLOSSEN);
+                order.markPaid(time.plusMinutes(45)); // frühere Bestellungen sind schon bezahlt
+                OrderService.addExisting(order);
             }
         }
 

@@ -94,6 +94,17 @@
     -fx-text-fill: #6d7d94;
 }
 
+/* Spalten: farbiger Rand oben je Status */
+
+.column-new       { -fx-border-color: #e8b84a #d6dde7 #d6dde7 #d6dde7; -fx-border-width: 4 1 1 1; }
+.column-preparing { -fx-border-color: #5b93d6 #d6dde7 #d6dde7 #d6dde7; -fx-border-width: 4 1 1 1; }
+.column-finished  { -fx-border-color: #5fb27f #d6dde7 #d6dde7 #d6dde7; -fx-border-width: 4 1 1 1; }
+
+.empty-column {
+    -fx-text-fill: #6d7d94;
+    -fx-padding: 6 4;
+}
+
 /* Bestellkarten */
 
 .order-card {
@@ -122,6 +133,12 @@
     -fx-background-color: #fff4df;
     -fx-background-radius: 7;
     -fx-padding: 10;
+}
+
+.ready-hint {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #287044;
 }
 
 /* Bestellstatus */
