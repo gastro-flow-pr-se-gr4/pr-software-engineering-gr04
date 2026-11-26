@@ -18,7 +18,6 @@ public class Order {
     private final List<OrderItem> items;
     private OrderStatus status;
     private String note = "";
-    private LocalDateTime paidAt = null; // unabhängig vom Küchenstatus
 
     public Order(int table, String waiter, LocalDateTime createdAt, int guests,
                  List<OrderItem> items, OrderStatus status) {
@@ -50,31 +49,9 @@ public class Order {
     public OrderStatus getStatus() { return status; }
     public void setStatus(OrderStatus status) { this.status = status; }
 
-    public boolean isPaid() { return paidAt != null; }
-
-    /** Zeitpunkt der Bezahlung, oder null wenn noch nicht bezahlt. */
-    public LocalDateTime getPaidAt() { return paidAt; }
-
-    public void markPaid(LocalDateTime time) {
-        if (isPaid()) {
-            throw new IllegalStateException("Bestellung #" + number + " wurde bereits bezahlt.");
-        }
-        paidAt = time;
-    }
-
-    /** Noch nicht bezahlt und nicht storniert. */
-    public boolean isPaymentDue() {
-        return !isPaid() && status != OrderStatus.STORNIERT;
-    }
-
     /** Noch nicht abgeschlossen oder storniert (neu, in Zubereitung oder fertig). */
     public boolean isOpen() {
         return status != OrderStatus.ABGESCHLOSSEN && status != OrderStatus.STORNIERT;
-    }
-
-    /** Läuft noch: nicht fertig serviert oder nicht bezahlt. */
-    public boolean isActive() {
-        return isOpen() || isPaymentDue();
     }
 
     public double getTotal() {

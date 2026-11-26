@@ -59,13 +59,11 @@ public class AnalyticsService {
         return OrderService.getOpenOrders().size();
     }
 
-    /** Tische mit offener oder unbezahlter Bestellung oder anwesenden Gästen. */
+    /** Tische mit offener Bestellung oder anwesenden Gästen. */
     public static Set<Integer> occupiedTables(LocalDateTime now) {
         Set<Integer> tables = new TreeSet<>();
-        for (Order order : OrderService.getSentOrders()) {
-            if (order.isActive()) {
-                tables.add(order.getTable());
-            }
+        for (Order order : OrderService.getOpenOrders()) {
+            tables.add(order.getTable());
         }
         for (Reservation reservation : ReservationService.getReservationsOn(now.toLocalDate())) {
             if (reservation.getStatus() == ReservationStatus.ANWESEND) {

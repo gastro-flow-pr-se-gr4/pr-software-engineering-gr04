@@ -1,14 +1,17 @@
 package at.gastroflow.frontend.management;
 
-import at.gastroflow.backend.demo.model.Ingredient;
-import at.gastroflow.backend.demo.model.Order;
 import at.gastroflow.backend.demo.model.OrderItem;
-import at.gastroflow.backend.demo.model.OrderStatus;
 import at.gastroflow.backend.demo.model.Product;
 import at.gastroflow.backend.demo.model.RestaurantSettings;
 import at.gastroflow.backend.demo.service.InventoryService;
 import at.gastroflow.backend.demo.service.MenuService;
-import at.gastroflow.backend.demo.service.OrderService;
+import at.gastroflow.backend.dto.CreateOrderRequest;
+import at.gastroflow.backend.dto.OrderDTO;
+import at.gastroflow.backend.dto.OrderItemDTO;
+import at.gastroflow.backend.model.OrderStatus;
+import at.gastroflow.frontend.api.ApiException;
+import at.gastroflow.frontend.api.InventoryBridge;
+import at.gastroflow.frontend.api.OrderClient;
 import javafx.collections.FXCollections;
 import javafx.scene.Node;
 import javafx.scene.control.ButtonBar;
@@ -22,6 +25,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -29,6 +33,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 /** Bestellungsübersicht: alle Bestellungen nach Status, verzögerte und knappe Zutaten hervorgehoben. */
 public class OrdersView {
@@ -47,14 +52,20 @@ public class OrdersView {
         LocalDateTime now = LocalDateTime.now();
         int delay = RestaurantSettings.get().getDelayMinutes();
 
-        // Offene Bestellungen + heute abgeschlossene/stornierte
-        List<Order> orders = new ArrayList<>(OrderService.getOpenOrders());
-        for (Order order : OrderService.getOrdersOn(LocalDate.now())) {
-            if (!order.isOpen()) {
-                orders.add(order);
+        // Offene Bestellungen + heute abgeschlossene/stornierte (von der REST-API)
+        List<OrderDTO> orders = new ArrayList<>();
+        String loadError = null;
+        try {
+            orders.addAll(OrderClient.openOrders());
+            for (OrderDTO order : OrderClient.ordersOn(LocalDate.now())) {
+                if (!order.isOpen()) {
+                    orders.add(order);
+                }
             }
+        } catch (ApiException e) {
+            loadError = "Bestellungen nicht verfügbar: " + e.getMessage();
         }
-        orders.sort(Comparator.comparing(Order::getCreatedAt).reversed());
+        orders.sort(Comparator.comparing(OrderDTO::createdAt).reversed());
 
         long delayed = orders.stream().filter(o -> isDelayed(o, now, delay)).count();
 
@@ -65,13 +76,15 @@ public class OrdersView {
         }
 
         VBox rows = new VBox();
-        List<Order> visible = orders.stream()
-                .filter(o -> filter.equals(ALL) || o.getStatus().toString().equals(filter))
+        List<OrderDTO> visible = orders.stream()
+                .filter(o -> filter.equals(ALL) || o.status().toString().equals(filter))
                 .toList();
-        if (visible.isEmpty()) {
+        if (loadError != null) {
+            rows.getChildren().add(Ui.muted(loadError));
+        } else if (visible.isEmpty()) {
             rows.getChildren().add(Ui.muted("Keine Bestellungen in diesem Bereich."));
         }
-        for (Order order : visible) {
+        for (OrderDTO order : visible) {
             rows.getChildren().add(orderRow(order, now, delay));
         }
 
@@ -99,10 +112,10 @@ public class OrdersView {
         );
     }
 
-    private HBox orderRow(Order order, LocalDateTime now, int delay) {
-        Label number = Ui.cell("#" + order.getNumber(), 60);
+    private HBox orderRow(OrderDTO order, LocalDateTime now, int delay) {
+        Label number = Ui.cell("#" + order.number(), 60);
         number.getStyleClass().add("strong");
-        Label total = Ui.cell(Ui.money(order.getTotal()), 80);
+        Label total = Ui.cell(Ui.money(order.total().doubleValue()), 80);
         total.getStyleClass().add("strong");
 
         Label duration;
@@ -120,16 +133,15 @@ public class OrdersView {
         items.setWrapText(true);
         VBox productBox = new VBox(3, items);
         if (order.isOpen()) {
-            List<Ingredient> scarce = InventoryService.scarceIngredientsFor(order);
+            List<String> scarce = InventoryBridge.scarceIngredients(order);
             if (!scarce.isEmpty()) {
-                Label hint = new Label("⚠ Knappe Zutaten: " + String.join(", ",
-                        scarce.stream().map(Ingredient::getName).toList()));
+                Label hint = new Label("⚠ Knappe Zutaten: " + String.join(", ", scarce));
                 hint.getStyleClass().add("warn-text");
                 hint.setWrapText(true);
                 productBox.getChildren().add(hint);
             }
         }
-        Optional<String> problem = InventoryService.problemFor(order);
+        Optional<String> problem = InventoryBridge.problemFor(order);
         if (problem.isPresent()) {
             Label hint = new Label(problem.get());
             hint.getStyleClass().add("error-text");
@@ -146,12 +158,12 @@ public class OrdersView {
         }
 
         HBox row = Ui.row(number,
-                Ui.cell(String.valueOf(order.getTable()), 42),
-                Ui.cell(order.getWaiter(), 110),
-                Ui.cell(order.getCreatedAt().format(Ui.TIME), 46),
+                Ui.cell(String.valueOf(order.table()), 42),
+                Ui.cell(order.waiter(), 110),
+                Ui.cell(order.createdAt().format(Ui.TIME), 46),
                 productBox,
                 total,
-                Ui.cellBox(Ui.badge(order.getStatus().toString(), Ui.orderColor(order.getStatus())), 112),
+                Ui.cellBox(Ui.badge(order.status().toString(), Ui.orderColor(order.status())), 112),
                 duration,
                 action);
         if (isDelayed(order, now, delay)) {
@@ -160,16 +172,24 @@ public class OrdersView {
         return row;
     }
 
-    private void cancel(Order order) {
-        boolean beforePreparation = order.getStatus() == OrderStatus.NEU;
-        String text = "Bestellung #" + order.getNumber() + " stornieren?\n"
+    private void cancel(OrderDTO order) {
+        boolean beforePreparation = order.status() == OrderStatus.NEU;
+        String text = "Bestellung #" + order.number() + " stornieren?\n"
                 + (beforePreparation
                 ? "Sie ist noch nicht in Zubereitung – gebuchte Zutaten werden ins Lager zurückgebucht."
-                : "Sie ist bereits „" + order.getStatus() + "“ – die Zutaten gelten als verbraucht (keine Rückbuchung).");
+                : "Sie ist bereits „" + order.status() + "“ – die Zutaten gelten als verbraucht (keine Rückbuchung).");
         if (!Ui.confirm(text, "Stornieren")) {
             return;
         }
-        boolean restored = OrderService.cancel(order);
+        OrderDTO cancelled;
+        try {
+            cancelled = OrderClient.cancel(order.id());
+        } catch (ApiException e) {
+            Ui.error(e.getMessage());
+            render();
+            return;
+        }
+        boolean restored = InventoryBridge.reverse(cancelled, !beforePreparation);
         Ui.info(restored ? "Storniert. Die Zutaten wurden ins Lager zurückgebucht."
                 : "Storniert. Es wurde nichts zurückgebucht.");
         render();
@@ -238,19 +258,27 @@ public class OrdersView {
         if (result.isEmpty() || result.get() != save || product.getValue() == null) {
             return;
         }
-        Order order = new Order(table.getValue(), "Leitung (Test)", LocalDateTime.now(), quantity.getValue(),
-                List.of(new OrderItem(product.getValue(), quantity.getValue())), OrderStatus.NEU);
-        OrderService.send(order);
-        Ui.info(InventoryService.problemFor(order).orElse("Bestellung #" + order.getNumber()
+        Product chosen = product.getValue();
+        OrderDTO order;
+        try {
+            order = OrderClient.create(new CreateOrderRequest(UUID.randomUUID(), table.getValue(), "Leitung (Test)",
+                    quantity.getValue(), List.of(new OrderItemDTO(chosen.getName(), chosen.getCategory(),
+                            BigDecimal.valueOf(chosen.getPrice()), quantity.getValue(), ""))));
+        } catch (ApiException e) {
+            Ui.error(e.getMessage());
+            return;
+        }
+        InventoryBridge.book(order);
+        Ui.info(InventoryBridge.problemFor(order).orElse("Bestellung #" + order.number()
                 + " angelegt. Die Zutaten wurden automatisch vom Lager abgebucht (siehe Bestand & Lager → Lagerhistorie)."));
         render();
     }
 
-    private boolean isDelayed(Order order, LocalDateTime now, int delay) {
+    private boolean isDelayed(OrderDTO order, LocalDateTime now, int delay) {
         return order.isOpen() && order.getMinutesSinceCreated(now) > delay;
     }
 
-    private String count(List<Order> orders, OrderStatus status) {
-        return String.valueOf(orders.stream().filter(o -> o.getStatus() == status).count());
+    private String count(List<OrderDTO> orders, OrderStatus status) {
+        return String.valueOf(orders.stream().filter(o -> o.status() == status).count());
     }
 }

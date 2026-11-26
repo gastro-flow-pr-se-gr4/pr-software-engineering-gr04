@@ -1,11 +1,20 @@
-package at.gastroflow.backend.demo.model;
+package at.gastroflow.frontend.model;
 
+import at.gastroflow.backend.demo.model.Product;
+import at.gastroflow.backend.dto.CreateOrderRequest;
+import at.gastroflow.backend.dto.OrderItemDTO;
+
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
-/** Eine Bestellung, die der Service gerade zusammenstellt (noch nicht an die Küche gesendet). */
+/**
+ * Eine Bestellung, die der Service gerade zusammenstellt (noch nicht an die Küche gesendet).
+ * Der Entwurf lebt nur im Frontend; abgeschickt wird er über die REST-API (siehe toRequest).
+ */
 public class OrderDraft {
 
     public static final int MAX_QUANTITY = 99;
@@ -37,6 +46,7 @@ public class OrderDraft {
     }
 
     private final int table;
+    private final UUID id = UUID.randomUUID(); // gleiche id bei doppeltem Absenden → Backend lehnt ab
     private final List<Line> lines = new ArrayList<>();
     private boolean sent = false;
 
@@ -108,8 +118,15 @@ public class OrderDraft {
                 .collect(Collectors.joining("\n"));
     }
 
-    public List<OrderItem> toItems() {
-        return lines.stream().map(line -> new OrderItem(line.product, line.quantity)).toList();
+    public UUID getId() { return id; }
+
+    /** Anfrage für POST /api/orders: Name, Kategorie und Preis werden mitgeschickt (Preis zum Bestellzeitpunkt). */
+    public CreateOrderRequest toRequest(String waiter) {
+        List<OrderItemDTO> items = lines.stream()
+                .map(line -> new OrderItemDTO(line.product.getName(), line.product.getCategory(),
+                        BigDecimal.valueOf(line.product.getPrice()), line.quantity, line.note))
+                .toList();
+        return new CreateOrderRequest(id, table, waiter, 1, items);
     }
 
     private static double roundToCents(double value) {

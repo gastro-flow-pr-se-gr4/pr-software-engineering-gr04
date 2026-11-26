@@ -11,11 +11,11 @@ import javafx.scene.layout.VBox;
 import java.util.Comparator;
 import java.util.List;
 
-import at.gastroflow.backend.demo.model.Order;
-import at.gastroflow.backend.demo.model.OrderItem;
-import at.gastroflow.backend.demo.model.OrderStatus;
-import at.gastroflow.backend.demo.service.DemoData;
-import at.gastroflow.backend.demo.service.OrderService;
+import at.gastroflow.backend.dto.OrderDTO;
+import at.gastroflow.backend.dto.OrderItemDTO;
+import at.gastroflow.backend.model.OrderStatus;
+import at.gastroflow.frontend.api.ApiException;
+import at.gastroflow.frontend.api.OrderClient;
 
 public class KitchenController {
 
@@ -40,25 +40,32 @@ public class KitchenController {
     // Wird beim Öffnen der Küchenansicht ausgeführt
     @FXML
     private void initialize() {
-        DemoData.load();
         showOrders();
     }
 
-    // Zeigt alle offenen Bestellungen nach Status sortiert in drei Spalten
+    // Zeigt alle offenen Bestellungen (von der REST-API) nach Status sortiert in drei Spalten
     private void showOrders() {
-        fillColumn(newColumn, newCount, OrderStatus.NEU, "Keine neuen Bestellungen.");
-        fillColumn(preparingColumn, preparingCount, OrderStatus.IN_ZUBEREITUNG, "Nichts in Zubereitung.");
-        fillColumn(finishedColumn, finishedCount, OrderStatus.FERTIG, "Nichts zur Abholung bereit.");
+        List<OrderDTO> open;
+        String emptyHint = null;
+        try {
+            open = OrderClient.openOrders();
+        } catch (ApiException e) {
+            open = List.of();
+            emptyHint = "Bestellungen nicht verfügbar: " + e.getMessage();
+        }
+        fillColumn(newColumn, newCount, open, OrderStatus.NEU, emptyHint != null ? emptyHint : "Keine neuen Bestellungen.");
+        fillColumn(preparingColumn, preparingCount, open, OrderStatus.IN_ZUBEREITUNG, "Nichts in Zubereitung.");
+        fillColumn(finishedColumn, finishedCount, open, OrderStatus.FERTIG, "Nichts zur Abholung bereit.");
     }
 
     // Füllt eine Spalte mit den Bestellungen eines Status (älteste zuerst)
-    private void fillColumn(VBox column, Label counter, OrderStatus status, String emptyText) {
+    private void fillColumn(VBox column, Label counter, List<OrderDTO> open, OrderStatus status, String emptyText) {
 
         column.getChildren().clear();
 
-        List<Order> orders = OrderService.getOpenOrders().stream()
-                .filter(order -> order.getStatus() == status)
-                .sorted(Comparator.comparing(Order::getCreatedAt))
+        List<OrderDTO> orders = open.stream()
+                .filter(order -> order.status() == status)
+                .sorted(Comparator.comparing(OrderDTO::createdAt))
                 .toList();
 
         counter.setText(String.valueOf(orders.size()));
@@ -70,17 +77,17 @@ public class KitchenController {
             column.getChildren().add(empty);
         }
 
-        for (Order order : orders) {
+        for (OrderDTO order : orders) {
             column.getChildren().add(createOrderCard(order));
         }
     }
 
     // Erstellt eine Bestellkarte für die Oberfläche
-    private VBox createOrderCard(Order order) {
+    private VBox createOrderCard(OrderDTO order) {
 
-        String number = String.valueOf(order.getNumber());
-        String table = String.valueOf(order.getTable());
-        String note = order.getNote();
+        String number = String.valueOf(order.number());
+        String table = String.valueOf(order.table());
+        String note = order.note();
 
         VBox card = new VBox(15);
         card.getStyleClass().add("order-card");
@@ -95,8 +102,8 @@ public class KitchenController {
 
         // Produkte anzeigen (eine Zeile pro Position, damit nichts abgeschnitten wird)
         VBox items = new VBox(5);
-        for (OrderItem item : order.getItems()) {
-            Label line = new Label(item.getQuantity() + "× " + item.getProductName());
+        for (OrderItemDTO item : order.items()) {
+            Label line = new Label(item.quantity() + "× " + item.productName());
             line.getStyleClass().add("order-items");
             line.setWrapText(true);
             line.setMinHeight(Region.USE_PREF_SIZE);
@@ -118,11 +125,11 @@ public class KitchenController {
         }
 
         // Nächster Schritt je nach Status. Fertige Bestellungen bringt der Service zum Tisch.
-        switch (order.getStatus()) {
+        switch (order.status()) {
             case NEU -> card.getChildren().add(
-                    actionButton("Zubereitung starten", () -> OrderService.startPreparation(order)));
+                    actionButton("Zubereitung starten", () -> OrderClient.changeStatus(order.id(), OrderStatus.IN_ZUBEREITUNG)));
             case IN_ZUBEREITUNG -> card.getChildren().add(
-                    actionButton("Fertig", () -> OrderService.markReady(order)));
+                    actionButton("Fertig", () -> OrderClient.changeStatus(order.id(), OrderStatus.FERTIG)));
             default -> {
                 Label waiting = new Label("Wartet auf den Service");
                 waiting.getStyleClass().add("ready-hint");

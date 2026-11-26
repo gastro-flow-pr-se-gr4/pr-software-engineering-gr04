@@ -9,6 +9,7 @@ import javafx.scene.layout.*;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -23,15 +24,19 @@ import at.gastroflow.backend.demo.service.ReservationService;
 import at.gastroflow.frontend.management.ReservationDialog;
 import at.gastroflow.frontend.management.Ui;
 
-import at.gastroflow.backend.demo.model.Order;
-import at.gastroflow.backend.demo.model.OrderDraft;
-import at.gastroflow.backend.demo.model.OrderItem;
-import at.gastroflow.backend.demo.model.OrderStatus;
 import at.gastroflow.backend.demo.model.Product;
 import at.gastroflow.backend.demo.service.DemoData;
-import at.gastroflow.backend.demo.service.InventoryService;
 import at.gastroflow.backend.demo.service.MenuService;
-import at.gastroflow.backend.demo.service.OrderService;
+
+// Bestellungen laufen über die REST-API des echten Backends (#75)
+import at.gastroflow.backend.dto.BillDTO;
+import at.gastroflow.backend.dto.OrderDTO;
+import at.gastroflow.backend.dto.OrderItemDTO;
+import at.gastroflow.backend.model.OrderStatus;
+import at.gastroflow.frontend.api.ApiException;
+import at.gastroflow.frontend.api.InventoryBridge;
+import at.gastroflow.frontend.api.OrderClient;
+import at.gastroflow.frontend.model.OrderDraft;
 
 public class ServiceController {
 
@@ -62,6 +67,9 @@ public class ServiceController {
     // Angefangene Bestellung pro Tisch – bleibt beim Tischwechsel und Abmelden erhalten
     private static final Map<Integer, OrderDraft> DRAFTS = new HashMap<>();
     private OrderDraft.Line selectedLine = null;
+
+    // Laufende Bestellungen aller Tische, einmal pro Aktualisierung von der REST-API geholt
+    private List<OrderDTO> activeOrders = List.of();
 
     @FXML
     private void initialize() {
@@ -291,6 +299,8 @@ public class ServiceController {
         List<Reservation> reservations = ReservationService.getReservationsOn(LocalDate.now());
         LocalDateTime now = LocalDateTime.now();
 
+        loadActiveOrders();
+
         // Tischanzahl aus den gemeinsamen Einstellungen (von der Leitung festgelegt)
         for (int i = 1; i <= RestaurantSettings.get().getTableCount(); i++) {
 
@@ -306,8 +316,8 @@ public class ServiceController {
             }
 
             // Hinweis, dass die Küche etwas fertig hat
-            boolean ready = OrderService.getActiveOrders(table).stream()
-                    .anyMatch(order -> order.getStatus() == OrderStatus.FERTIG);
+            boolean ready = activeOrders.stream()
+                    .anyMatch(order -> order.table() == table && order.status() == OrderStatus.FERTIG);
             if (ready) {
                 text = text + "\n● fertig";
             }
@@ -329,9 +339,19 @@ public class ServiceController {
         }
     }
 
+    // Holt alle laufenden Bestellungen; ist das Backend nicht erreichbar, bleibt die Liste leer
+    // (die Fehlermeldung erscheint dann bei der Rechnung des Tisches)
+    private void loadActiveOrders() {
+        try {
+            activeOrders = OrderClient.activeOrders();
+        } catch (ApiException e) {
+            activeOrders = List.of();
+        }
+    }
+
     private String tableStatus(int table, List<Reservation> reservations) {
 
-        if (OrderService.isTableOccupied(table)) {
+        if (activeOrders.stream().anyMatch(order -> order.table() == table)) {
             return "besetzt";
         }
 
@@ -606,8 +626,21 @@ public class ServiceController {
     private void showBill() {
 
         paidItems.getChildren().clear();
-        List<Order> active = OrderService.getActiveOrders(selectedTable);
-        List<Order> unpaid = OrderService.getUnpaidOrders(selectedTable);
+        BillDTO bill;
+        try {
+            bill = OrderClient.bill(selectedTable);
+        } catch (ApiException e) {
+            Label error = new Label("Rechnung nicht verfügbar: " + e.getMessage());
+            error.getStyleClass().add("error-text");
+            error.setWrapText(true);
+            paidItems.getChildren().add(error);
+            paidTotal.setText(formatPrice(BigDecimal.ZERO));
+            payButton.setDisable(true);
+            return;
+        }
+
+        List<OrderDTO> active = bill.orders();
+        boolean unpaid = active.stream().anyMatch(OrderDTO::isPaymentDue);
 
         if (active.isEmpty()) {
             Label empty = new Label("Nichts offen – für diesen Tisch gibt es keine laufenden Bestellungen.");
@@ -616,59 +649,59 @@ public class ServiceController {
             paidItems.getChildren().add(empty);
         }
 
-        for (Order order : active) {
+        for (OrderDTO order : active) {
             paidItems.getChildren().add(billOrder(order));
         }
 
-        paidTotal.setText(formatPrice(OrderService.getAmountDue(selectedTable)));
-        payButton.setDisable(unpaid.isEmpty());
+        paidTotal.setText(formatPrice(bill.amountDue()));
+        payButton.setDisable(!unpaid);
     }
 
-    private VBox billOrder(Order order) {
+    private VBox billOrder(OrderDTO order) {
 
-        Label title = new Label("Bestellung #" + order.getNumber()
-                + " · " + order.getCreatedAt().format(TIME_FORMAT) + " Uhr");
+        Label title = new Label("Bestellung #" + order.number()
+                + " · " + order.createdAt().format(TIME_FORMAT) + " Uhr");
         title.getStyleClass().add("res-name");
 
         Region space = new Region();
         HBox.setHgrow(space, Priority.ALWAYS);
 
         // abgeschlossen heißt hier: serviert, aber noch nicht bezahlt
-        String status = order.getStatus() == OrderStatus.ABGESCHLOSSEN
-                ? "Serviert" : order.getStatus().toString();
+        String status = order.status() == OrderStatus.ABGESCHLOSSEN
+                ? "Serviert" : order.status().toString();
 
         HBox heading = new HBox(10, title, space);
         heading.setAlignment(Pos.CENTER_LEFT);
         if (order.isPaid()) {
             heading.getChildren().add(Ui.badge("Bezahlt", "gray"));
         }
-        heading.getChildren().add(Ui.badge(status, Ui.orderColor(order.getStatus())));
+        heading.getChildren().add(Ui.badge(status, Ui.orderColor(order.status())));
 
         VBox box = new VBox(6, heading);
         box.getStyleClass().add("item-row");
 
-        for (OrderItem item : order.getItems()) {
-            Label name = new Label(item.getQuantity() + "× " + item.getProductName());
+        for (OrderItemDTO item : order.items()) {
+            Label name = new Label(item.quantity() + "× " + item.productName());
             name.setWrapText(true);
             name.setMaxWidth(Double.MAX_VALUE);
             HBox.setHgrow(name, Priority.ALWAYS);
 
-            Label price = new Label(formatPrice(item.getTotal()));
+            Label price = new Label(formatPrice(item.total()));
             price.getStyleClass().add("line-price");
             box.getChildren().add(new HBox(12, name, price));
         }
 
-        if (!order.getNote().isBlank()) {
-            Label note = new Label("↳ " + order.getNote().replace("\n", "\n↳ "));
+        if (!order.note().isBlank()) {
+            Label note = new Label("↳ " + order.note().replace("\n", "\n↳ "));
             note.getStyleClass().add("muted");
             note.setWrapText(true);
             box.getChildren().add(note);
         }
 
-        if (order.getStatus() == OrderStatus.FERTIG) {
+        if (order.status() == OrderStatus.FERTIG) {
             box.getChildren().add(actionButton("Serviert", () -> {
                 try {
-                    OrderService.markServed(order);
+                    OrderClient.changeStatus(order.id(), OrderStatus.ABGESCHLOSSEN);
                 } catch (IllegalStateException e) {
                     warning(e.getMessage());
                 }
@@ -699,14 +732,25 @@ public class ServiceController {
         storeNote();
         OrderDraft draft = draft();
 
-        // Echte Bestellung anlegen – die Zutaten werden dabei automatisch vom Lager abgebucht
-        Order order;
-        try {
-            order = OrderService.submit(draft, "Service");
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            showSendError(e.getMessage()); // die Bestellung bleibt zum Korrigieren erhalten
+        // Prüfungen, die nur das Frontend kennt (Tische und Speisekarte liegen noch in der Demo)
+        String problem = checkDraft(draft);
+        if (problem != null) {
+            showSendError(problem); // die Bestellung bleibt zum Korrigieren erhalten
             return;
         }
+
+        // Über die REST-API anlegen; die id des Entwurfs verhindert doppeltes Speichern
+        OrderDTO order;
+        try {
+            order = OrderClient.create(draft.toRequest("Service"));
+        } catch (ApiException e) {
+            showSendError(e.getMessage());
+            return;
+        }
+        draft.markSent();
+
+        // Zutaten automatisch vom Lager abbuchen (Lager liegt noch in der Demo)
+        InventoryBridge.book(order);
 
         // Entwurf leeren, bevor die Bestätigung erscheint – so ist kein zweites Absenden möglich
         DRAFTS.remove(selectedTable);
@@ -714,13 +758,34 @@ public class ServiceController {
         showTables();
         refresh();
 
-        String confirmation = "Bestellung #" + order.getNumber() + " für Tisch " + order.getTable()
+        String confirmation = "Bestellung #" + order.number() + " für Tisch " + order.table()
                 + " wurde an die Küche gesendet.\n\n"
-                + draft.getItemCount() + " Artikel · " + formatPrice(order.getTotal());
+                + draft.getItemCount() + " Artikel · " + formatPrice(order.total());
 
-        InventoryService.problemFor(order).ifPresentOrElse(
-                problem -> warning(confirmation + "\n\nHinweis Lager: " + problem),
+        InventoryBridge.problemFor(order).ifPresentOrElse(
+                stockProblem -> warning(confirmation + "\n\nHinweis Lager: " + stockProblem),
                 () -> info(confirmation));
+    }
+
+    // Gibt es den Tisch noch und sind alle Produkte verfügbar? (null = alles in Ordnung)
+    private String checkDraft(OrderDraft draft) {
+        if (draft.isSent()) {
+            return "Diese Bestellung wurde bereits an die Küche gesendet.";
+        }
+        if (draft.isEmpty()) {
+            return "Die Bestellung ist leer. Bitte zuerst ein Produkt auswählen.";
+        }
+        if (draft.getTable() < 1 || draft.getTable() > RestaurantSettings.get().getTableCount()) {
+            return "Tisch " + draft.getTable() + " gibt es nicht mehr. Bitte einen anderen Tisch wählen.";
+        }
+        String unavailable = draft.getLines().stream()
+                .map(OrderDraft.Line::getProduct)
+                .filter(product -> !MenuService.getAvailableProducts().contains(product))
+                .map(Product::getName)
+                .distinct()
+                .collect(java.util.stream.Collectors.joining(", "));
+        return unavailable.isEmpty() ? null
+                : "Nicht mehr verfügbar: " + unavailable + ". Bitte aus der Bestellung entfernen.";
     }
 
     // Kategorien der Speisekarte, in denen es aktive Produkte gibt
@@ -735,16 +800,26 @@ public class ServiceController {
         return String.format("%.2f €", price).replace('.', ',');
     }
 
+    private String formatPrice(BigDecimal price) {
+        return formatPrice(price.doubleValue());
+    }
+
     @FXML
     private void pay() {
 
         int table = selectedTable;
-        double amount = OrderService.getAmountDue(table);
-        long notServed = OrderService.getUnpaidOrders(table).stream()
-                .filter(Order::isOpen)
+        BillDTO bill;
+        try {
+            bill = OrderClient.bill(table);
+        } catch (ApiException e) {
+            warning(e.getMessage());
+            return;
+        }
+        long notServed = bill.orders().stream()
+                .filter(order -> order.isPaymentDue() && order.isOpen())
                 .count();
 
-        String question = "Tisch " + table + " abkassieren?\n\nZu zahlen: " + formatPrice(amount);
+        String question = "Tisch " + table + " abkassieren?\n\nZu zahlen: " + formatPrice(bill.amountDue());
         if (notServed > 0) {
             question += "\n\nAchtung: " + (notServed == 1 ? "1 Bestellung ist" : notServed + " Bestellungen sind")
                     + " noch nicht serviert. Der Tisch bleibt besetzt, bis alles serviert ist.";
@@ -754,15 +829,25 @@ public class ServiceController {
         }
 
         try {
-            double paid = OrderService.payTable(table);
+            BigDecimal paid = OrderClient.pay(table);
+            endPresentReservations(table);
             showTables();
             showReservations();
             refresh();
             info("Tisch " + table + ": " + formatPrice(paid) + " bezahlt."
-                    + (OrderService.isTableOccupied(table) ? "" : " Der Tisch ist frei."));
-        } catch (IllegalStateException e) {
+                    + (OrderClient.isTableOccupied(table) ? "" : " Der Tisch ist frei."));
+        } catch (ApiException e) {
             refresh();
             warning(e.getMessage());
+        }
+    }
+
+    // Nach dem Bezahlen sind die anwesenden Gäste dieses Tisches fertig
+    private void endPresentReservations(int table) {
+        for (Reservation reservation : ReservationService.getReservationsOn(LocalDate.now())) {
+            if (reservation.getTable() == table && reservation.getStatus() == ReservationStatus.ANWESEND) {
+                ReservationService.setStatus(reservation, ReservationStatus.ABGESCHLOSSEN);
+            }
         }
     }
 
