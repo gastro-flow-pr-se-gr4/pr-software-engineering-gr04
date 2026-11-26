@@ -2,7 +2,7 @@
 
 | Person | Zeit |
 |---|---|
-| Matthias | 17h 05m |
+| Matthias | 18h 20m |
 | Jien Wong | 24h 43m |
 | Elena | 22h 13m |
-| Gesamt | 64h 01m |
+| Gesamt | 65h 16m |
