@@ -1,7 +1,7 @@
 package at.gastroflow.frontend.management;
 
 import at.gastroflow.backend.demo.model.EmployeeStatus;
-import at.gastroflow.backend.demo.model.OrderStatus;
+import at.gastroflow.backend.model.OrderStatus;
 import at.gastroflow.backend.demo.model.Reservation;
 import at.gastroflow.backend.demo.model.ReservationStatus;
 import at.gastroflow.backend.demo.model.StockStatus;

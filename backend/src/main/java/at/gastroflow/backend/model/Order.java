@@ -1,0 +1,117 @@
+package at.gastroflow.backend.model;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+/** Eine Bestellung an einem Tisch. Küchenstatus und Bezahlung sind unabhängig voneinander. */
+public class Order extends BaseEntity {
+
+    private int number; // fortlaufende Nummer aus der Datenbank, 0 solange nicht gespeichert
+    private final int tableNumber;
+    private final String waiter;
+    private final LocalDateTime createdAt;
+    private final int guests;
+    private final List<OrderItem> items;
+    private OrderStatus status;
+    private LocalDateTime paidAt;
+
+    //Neue Bestellung erstellen
+    public Order(UUID id, int tableNumber, String waiter, LocalDateTime createdAt, int guests, List<OrderItem> items) {
+        this(id, 0, tableNumber, waiter, createdAt, guests, items, OrderStatus.NEU, null);
+    }
+
+    //Bestellung aus Datenbank laden
+    public Order(UUID id, int number, int tableNumber, String waiter, LocalDateTime createdAt, int guests,
+                 List<OrderItem> items, OrderStatus status, LocalDateTime paidAt) {
+        super(id == null ? UUID.randomUUID() : id);
+        this.number = number;
+        this.tableNumber = tableNumber;
+        this.waiter = waiter;
+        this.createdAt = createdAt;
+        this.guests = guests;
+        this.items = new ArrayList<>(items);
+        this.status = status;
+        this.paidAt = paidAt;
+    }
+
+    public int getNumber() {
+        return number;
+    }
+
+    public void setNumber(int number) {
+        this.number = number;
+    }
+
+    public int getTableNumber() {
+        return tableNumber;
+    }
+
+    public String getWaiter() {
+        return waiter;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public int getGuests() {
+        return guests;
+    }
+
+    public List<OrderItem> getItems() {
+        return Collections.unmodifiableList(items);
+    }
+
+    public OrderStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(OrderStatus status) {
+        this.status = status;
+    }
+
+    /** Zeitpunkt der Bezahlung, oder null wenn noch nicht bezahlt. */
+    public LocalDateTime getPaidAt() {
+        return paidAt;
+    }
+
+    public void setPaidAt(LocalDateTime paidAt) {
+        this.paidAt = paidAt;
+    }
+
+    public boolean isPaid() {
+        return paidAt != null;
+    }
+
+    /** Noch nicht serviert und nicht storniert (neu, in Zubereitung oder fertig). */
+    public boolean isOpen() {
+        return status != OrderStatus.ABGESCHLOSSEN && status != OrderStatus.STORNIERT;
+    }
+
+    /** Noch nicht bezahlt und nicht storniert. */
+    public boolean isPaymentDue() {
+        return !isPaid() && status != OrderStatus.STORNIERT;
+    }
+
+    /** Läuft noch: nicht fertig serviert oder nicht bezahlt. */
+    public boolean isActive() {
+        return isOpen() || isPaymentDue();
+    }
+
+    public BigDecimal getTotal() {
+        return items.stream().map(OrderItem::getTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /** Alle Sonderwünsche für die Küche, einer pro Zeile, z. B. "1× Classic Burger: ohne Zwiebeln". */
+    public String getNoteText() {
+        return items.stream()
+                .filter(item -> !item.getNote().isBlank())
+                .map(item -> item.getQuantity() + "× " + item.getProductName() + ": " + item.getNote())
+                .collect(Collectors.joining("\n"));
+    }
+}
