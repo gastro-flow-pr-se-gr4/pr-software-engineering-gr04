@@ -48,9 +48,26 @@ public class InMemoryOrderDAO extends OrderDAO {
 
     @Override
     public void save(Order order) {
+        saveAll(List.of(order));
+    }
+
+    @Override
+    public void saveAll(List<Order> newOrders) {
         saveCalls++;
-        order.setNumber(nextNumber++);
-        orders.add(order);
+        for (Order order : newOrders) {
+            order.setNumber(nextNumber++);
+            orders.add(order);
+        }
+    }
+
+    @Override
+    public boolean existsSubmission(UUID submissionId) {
+        return orders.stream().anyMatch(o -> submissionId.equals(o.getSubmissionId()));
+    }
+
+    @Override
+    public void closeKitchen(List<UUID> ids) {
+        ids.forEach(id -> findById(id).setKitchenClosed(true));
     }
 
     @Override

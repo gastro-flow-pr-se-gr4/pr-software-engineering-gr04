@@ -5,7 +5,7 @@ import at.gastroflow.backend.dto.OrderDTO;
 import at.gastroflow.backend.dto.OrderItemDTO;
 import at.gastroflow.backend.model.OrderStatus;
 import at.gastroflow.backend.service.InMemoryOrderDAO;
-import at.gastroflow.backend.service.OrderService;
+import at.gastroflow.backend.service.InMemoryCourseDAO;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,8 +31,7 @@ class ApiServerTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        InMemoryOrderDAO dao = new InMemoryOrderDAO();
-        server = new ApiServer(new OrderService(dao), dao);
+        server = new ApiServer(new InMemoryOrderDAO(), new InMemoryCourseDAO());
         base = "http://127.0.0.1:" + server.start(0) + "/api";
     }
 
@@ -53,7 +52,7 @@ class ApiServerTest {
         HttpResponse<String> response = call("POST", "/orders", new CreateOrderRequest(UUID.randomUUID(), table,
                 "Service", 1, List.of(new OrderItemDTO("Classic Burger", "Burger", new BigDecimal("14.90"), 2, "ohne Zwiebeln"))));
         assertEquals(201, response.statusCode(), response.body());
-        return Json.MAPPER.readValue(response.body(), OrderDTO.class);
+        return Json.MAPPER.readValue(response.body(), OrderDTO[].class)[0];
     }
 
     @Test
@@ -78,6 +77,28 @@ class ApiServerTest {
 
         assertEquals(200, call("POST", "/tables/4/pay", null).statusCode());
         assertEquals(409, call("POST", "/tables/4/pay", null).statusCode());
+    }
+
+    @Test
+    void kitchenAndCoursesOverHttp() throws Exception {
+        call("POST", "/courses", java.util.Map.of("category", "Burger", "course", "VORSPEISE"));
+        JsonNode lookup = Json.MAPPER.readTree(call("POST", "/courses/lookup",
+                java.util.Map.of("categories", List.of("Burger", "Desserts"))).body());
+        assertEquals("VORSPEISE", lookup.get("Burger").asText());
+        assertEquals("NACHSPEISE", lookup.get("Desserts").asText());
+
+        createBurger(6);
+        JsonNode tables = Json.MAPPER.readTree(call("GET", "/kitchen", null).body());
+        assertEquals(1, tables.size());
+        assertEquals("NEU", tables.get(0).get("stage").asText());
+
+        JsonNode card = Json.MAPPER.readTree(call("POST", "/kitchen/6/next", null).body());
+        assertEquals("IN_ZUBEREITUNG", card.get("stage").asText());
+        card = Json.MAPPER.readTree(call("POST", "/kitchen/6/ready", null).body());
+        assertTrue(card.get("canClose").asBoolean());
+        assertEquals(409, call("POST", "/kitchen/6/next", null).statusCode());
+        assertEquals(200, call("POST", "/kitchen/6/close", null).statusCode());
+        assertEquals(0, Json.MAPPER.readTree(call("GET", "/kitchen", null).body()).size());
     }
 
     @Test

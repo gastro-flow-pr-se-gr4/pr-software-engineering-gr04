@@ -19,6 +19,9 @@ public class Order extends BaseEntity {
     private final List<OrderItem> items;
     private OrderStatus status;
     private LocalDateTime paidAt;
+    private Course course = Course.HAUPTSPEISE; // jede Bestellung gehört zu genau einem Gang
+    private boolean kitchenClosed = false;       // Küche hat den Tisch mit „Abschließen“ erledigt
+    private UUID submissionId;                   // gleiche id = beim selben Absenden entstanden
 
     //Neue Bestellung erstellen
     public Order(UUID id, int tableNumber, String waiter, LocalDateTime createdAt, int guests, List<OrderItem> items) {
@@ -82,6 +85,35 @@ public class Order extends BaseEntity {
 
     public void setPaidAt(LocalDateTime paidAt) {
         this.paidAt = paidAt;
+    }
+
+    public Course getCourse() {
+        return course;
+    }
+
+    public void setCourse(Course course) {
+        this.course = course == null ? Course.HAUPTSPEISE : course;
+    }
+
+    /** Muss die Küche diese Bestellung zubereiten? Getränke bringt der Service selbst. */
+    public boolean isKitchenOrder() {
+        return course.isKitchen();
+    }
+
+    public boolean isKitchenClosed() {
+        return kitchenClosed;
+    }
+
+    public void setKitchenClosed(boolean kitchenClosed) {
+        this.kitchenClosed = kitchenClosed;
+    }
+
+    public UUID getSubmissionId() {
+        return submissionId;
+    }
+
+    public void setSubmissionId(UUID submissionId) {
+        this.submissionId = submissionId;
     }
 
     public boolean isPaid() {

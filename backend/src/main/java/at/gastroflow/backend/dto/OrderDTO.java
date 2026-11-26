@@ -1,5 +1,6 @@
 package at.gastroflow.backend.dto;
 
+import at.gastroflow.backend.model.Course;
 import at.gastroflow.backend.model.OrderStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -13,7 +14,19 @@ import java.util.stream.Collectors;
 /** Eine Bestellung, wie sie über die REST-API verschickt wird. */
 public record OrderDTO(UUID id, int number, int table, String waiter, LocalDateTime createdAt, int guests,
                        OrderStatus status, LocalDateTime paidAt, List<OrderItemDTO> items,
-                       BigDecimal total, String note) {
+                       BigDecimal total, String note, Course course, boolean kitchenClosed) {
+
+    /** Muss die Küche diese Bestellung zubereiten? Getränke bringt der Service selbst. */
+    @JsonIgnore
+    public boolean isKitchenOrder() {
+        return course != null && course.isKitchen();
+    }
+
+    /** Kann der Service sie jetzt als serviert markieren? (fertig aus der Küche oder ein Getränk) */
+    @JsonIgnore
+    public boolean canServe() {
+        return status == OrderStatus.FERTIG || (!isKitchenOrder() && status == OrderStatus.NEU);
+    }
 
     @JsonIgnore
     public boolean isPaid() {

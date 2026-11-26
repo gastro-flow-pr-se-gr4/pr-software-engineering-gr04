@@ -19,7 +19,9 @@ public class OrderMapper {
                 order.getPaidAt(),
                 order.getItems().stream().map(this::toDTO).toList(),
                 order.getTotal(),
-                order.getNoteText()
+                order.getNoteText(),
+                order.getCourse(),
+                order.isKitchenClosed()
         );
     }
 

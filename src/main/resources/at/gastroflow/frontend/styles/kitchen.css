@@ -186,3 +186,41 @@
 .button:disabled {
     -fx-opacity: 0.55;
 }
+
+/* Gänge */
+
+.course-label {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #5b6472;
+}
+
+.next-course {
+    -fx-font-size: 13px;
+    -fx-text-fill: #5b6472;
+}
+
+.course-done {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #287044;
+}
+
+.course-current {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #245a96;
+}
+
+.course-open {
+    -fx-font-size: 12px;
+    -fx-text-fill: #8b93a1;
+}
+
+.close-button {
+    -fx-background-color: #287044;
+}
+
+.close-button:hover {
+    -fx-background-color: #1f5a36;
+}

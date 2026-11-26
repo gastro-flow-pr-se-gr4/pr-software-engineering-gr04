@@ -1,12 +1,16 @@
 package at.gastroflow.backend.api;
 
+import at.gastroflow.backend.dao.CourseDAO;
 import at.gastroflow.backend.dao.OrderDAO;
 import at.gastroflow.backend.dto.BillDTO;
 import at.gastroflow.backend.dto.CreateOrderRequest;
 import at.gastroflow.backend.dto.OrderDTO;
 import at.gastroflow.backend.mapper.OrderMapper;
 import at.gastroflow.backend.model.Order;
+import at.gastroflow.backend.model.Course;
 import at.gastroflow.backend.model.OrderStatus;
+import at.gastroflow.backend.service.CourseService;
+import at.gastroflow.backend.service.KitchenService;
 import at.gastroflow.backend.service.OrderService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -37,11 +41,18 @@ import java.util.regex.Pattern;
  * GET  /api/health                    – läuft die API?
  * GET  /api/orders                    – alle Bestellungen; Filter: ?table=3, ?open=true, ?active=true, ?date=2026-11-26
  * GET  /api/orders/{id}               – eine Bestellung
- * POST /api/orders                    – Bestellung anlegen (CreateOrderRequest)
+ * POST /api/orders                    – Bestellung anlegen (CreateOrderRequest), Antwort: eine Bestellung pro Gang
  * POST /api/orders/{id}/status        – nächster Schritt, Body {"status":"IN_ZUBEREITUNG"}
  * POST /api/orders/{id}/cancel        – stornieren
  * GET  /api/tables/{nr}/bill          – offener Betrag und laufende Bestellungen eines Tisches
  * POST /api/tables/{nr}/pay           – Tisch abkassieren
+ * GET  /api/kitchen                   – Tischkarten der Küche (Gang für Gang)
+ * POST /api/kitchen/{nr}/next         – nächsten Gang starten (geht direkt in Zubereitung)
+ * POST /api/kitchen/{nr}/ready        – aktueller Gang ist fertig
+ * POST /api/kitchen/{nr}/close        – Küche schließt den Tisch ab
+ * POST /api/courses/lookup            – Gang zu Kategorien, Body {"categories":["Desserts", …]}
+ * POST /api/courses                   – Gang einer Kategorie setzen, Body {"category":"…","course":"NACHSPEISE"}
+ * POST /api/courses/rename            – Kategorie umbenannt, Body {"from":"…","to":"…"}
  *
  * Die Tabellen (db/orders.sql) werden beim ersten Zugriff automatisch angelegt.
  *
@@ -56,8 +67,11 @@ public class ApiServer {
     private static final Pattern ORDER = Pattern.compile("/api/orders/([0-9a-fA-F-]{36})");
     private static final Pattern ORDER_ACTION = Pattern.compile("/api/orders/([0-9a-fA-F-]{36})/(status|cancel)");
     private static final Pattern TABLE_ACTION = Pattern.compile("/api/tables/(\\d+)/(bill|pay)");
+    private static final Pattern KITCHEN_ACTION = Pattern.compile("/api/kitchen/(\\d+)/(next|ready|close)");
 
     private final OrderService orderService;
+    private final KitchenService kitchenService;
+    private final CourseService courseService;
     private final OrderDAO schema;
     private final OrderMapper mapper = new OrderMapper();
     private HttpServer server;
@@ -65,16 +79,15 @@ public class ApiServer {
 
     /** Mit der echten Datenbank: legt die Tabellen beim ersten Zugriff an, falls sie fehlen. */
     public ApiServer() {
-        this(new OrderDAO());
+        this(new OrderDAO(), new CourseDAO());
     }
 
-    private ApiServer(OrderDAO dao) {
-        this(new OrderService(dao), dao);
-    }
-
-    public ApiServer(OrderService orderService, OrderDAO schema) {
-        this.orderService = orderService;
-        this.schema = schema;
+    /** Mit eigenen DAOs (z. B. im Speicher für Tests). */
+    public ApiServer(OrderDAO orderDAO, CourseDAO courseDAO) {
+        this.courseService = new CourseService(courseDAO);
+        this.orderService = new OrderService(orderDAO, courseService);
+        this.kitchenService = new KitchenService(orderService);
+        this.schema = orderDAO;
     }
 
     // Tabellen anlegen, sobald die Datenbank erreichbar ist (auch wenn Docker erst später startet)
@@ -134,7 +147,7 @@ public class ApiServer {
 
             } else if (path.equals("/api/orders") && method.equals("POST")) {
                 CreateOrderRequest request = read(exchange, CreateOrderRequest.class);
-                send(exchange, 201, mapper.toDTO(orderService.createOrder(request)));
+                send(exchange, 201, toDTOs(orderService.createOrder(request)));
 
             } else if ((matcher = ORDER.matcher(path)).matches() && method.equals("GET")) {
                 send(exchange, 200, mapper.toDTO(orderService.getOrder(UUID.fromString(matcher.group(1)))));
@@ -160,6 +173,44 @@ public class ApiServer {
                 } else {
                     error(exchange, 405, "Diese Methode ist hier nicht erlaubt.");
                 }
+
+            } else if (path.equals("/api/kitchen") && method.equals("GET")) {
+                send(exchange, 200, kitchenService.getTables());
+
+            } else if ((matcher = KITCHEN_ACTION.matcher(path)).matches() && method.equals("POST")) {
+                int table = Integer.parseInt(matcher.group(1));
+                switch (matcher.group(2)) {
+                    case "next" -> kitchenService.startNextCourse(table);
+                    case "ready" -> kitchenService.markCourseReady(table);
+                    default -> kitchenService.closeTable(table);
+                }
+                send(exchange, 200, kitchenService.getTable(table));
+
+            } else if (path.equals("/api/courses/lookup") && method.equals("POST")) {
+                JsonNode body = read(exchange, JsonNode.class);
+                Map<String, Course> result = new java.util.LinkedHashMap<>();
+                if (body != null) {
+                    for (JsonNode category : body.path("categories")) {
+                        result.put(category.asText(), courseService.getCourse(category.asText()));
+                    }
+                }
+                send(exchange, 200, result);
+
+            } else if (path.equals("/api/courses") && method.equals("POST")) {
+                JsonNode body = read(exchange, JsonNode.class);
+                if (body == null) {
+                    throw new IllegalArgumentException("Bitte Kategorie und Gang angeben.");
+                }
+                courseService.setCourse(body.path("category").asText(null), parseCourse(body.path("course").asText(null)));
+                send(exchange, 200, Map.of("ok", true));
+
+            } else if (path.equals("/api/courses/rename") && method.equals("POST")) {
+                JsonNode body = read(exchange, JsonNode.class);
+                if (body == null || body.path("from").isMissingNode() || body.path("to").isMissingNode()) {
+                    throw new IllegalArgumentException("Bitte alten und neuen Namen angeben.");
+                }
+                courseService.renameCategory(body.path("from").asText(), body.path("to").asText());
+                send(exchange, 200, Map.of("ok", true));
 
             } else {
                 error(exchange, 404, "Unbekannte Adresse: " + method + " " + path);
@@ -210,6 +261,14 @@ public class ApiServer {
             return OrderStatus.valueOf(text);
         } catch (IllegalArgumentException | NullPointerException e) {
             throw new IllegalArgumentException("Unbekannter Status: " + text);
+        }
+    }
+
+    private static Course parseCourse(String text) {
+        try {
+            return Course.valueOf(text);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new IllegalArgumentException("Unbekannter Gang: " + text);
         }
     }
 

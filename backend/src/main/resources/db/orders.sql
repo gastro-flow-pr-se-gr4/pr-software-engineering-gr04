@@ -27,3 +27,16 @@ CREATE TABLE IF NOT EXISTS order_items (
 
 CREATE INDEX IF NOT EXISTS orders_table_idx ON orders (table_number);
 CREATE INDEX IF NOT EXISTS order_items_order_idx ON order_items (order_id);
+
+-- Gänge (#84): jede Bestellung gehört zu einem Gang, die Küche kann einen Tisch abschließen.
+-- submission_id fasst die Teile eines Absendens zusammen (und verhindert doppeltes Speichern).
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS course VARCHAR(20) NOT NULL DEFAULT 'HAUPTSPEISE';
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS kitchen_closed BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS submission_id UUID NULL;
+CREATE INDEX IF NOT EXISTS orders_submission_idx ON orders (submission_id);
+
+-- Gang pro Kategorie der Speisekarte (von der Leitung änderbar)
+CREATE TABLE IF NOT EXISTS category_courses (
+    category VARCHAR(100) PRIMARY KEY,
+    course   VARCHAR(20) NOT NULL
+);

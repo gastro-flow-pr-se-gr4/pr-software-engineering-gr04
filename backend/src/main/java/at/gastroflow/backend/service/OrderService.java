@@ -3,6 +3,7 @@ package at.gastroflow.backend.service;
 import at.gastroflow.backend.dao.OrderDAO;
 import at.gastroflow.backend.dto.CreateOrderRequest;
 import at.gastroflow.backend.dto.OrderItemDTO;
+import at.gastroflow.backend.model.Course;
 import at.gastroflow.backend.model.Order;
 import at.gastroflow.backend.model.OrderItem;
 import at.gastroflow.backend.model.OrderStatus;
@@ -12,7 +13,9 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
@@ -28,19 +31,25 @@ public class OrderService {
     public static final int MAX_NOTE_LENGTH = 500;
 
     private final OrderDAO orderDAO;
+    private final CourseService courseService;
 
     public OrderService() {
-        this(new OrderDAO());
+        this(new OrderDAO(), new CourseService());
     }
 
-    public OrderService(OrderDAO orderDAO) {
+    public OrderService(OrderDAO orderDAO, CourseService courseService) {
         this.orderDAO = orderDAO;
+        this.courseService = courseService;
     }
 
     // ---------- Anlegen ----------
 
-    /** Prüft die Anfrage und speichert die Bestellung mit Status Neu. Bei einem Fehler wird nichts gespeichert. */
-    public synchronized Order createOrder(CreateOrderRequest request) throws SQLException {
+    /**
+     * Prüft die Anfrage und speichert sie aufgeteilt nach Gängen: eine Bestellung pro Gang
+     * (Getränke, Vorspeise, Hauptspeise, Nachspeise, in dieser Reihenfolge), alle mit Status Neu.
+     * Getränke gehen nicht in die Küche. Bei einem Fehler wird nichts gespeichert.
+     */
+    public synchronized List<Order> createOrder(CreateOrderRequest request) throws SQLException {
         if (request == null || request.items() == null || request.items().isEmpty()) {
             throw new IllegalArgumentException("Die Bestellung ist leer. Bitte zuerst ein Produkt auswählen.");
         }
@@ -50,20 +59,30 @@ public class OrderService {
         if (request.guests() < 0) {
             throw new IllegalArgumentException("Die Anzahl der Gäste darf nicht negativ sein.");
         }
-        if (request.id() != null && orderDAO.findById(request.id()) != null) {
+        if (request.id() != null && orderDAO.existsSubmission(request.id())) {
             throw new IllegalStateException("Diese Bestellung wurde bereits an die Küche gesendet.");
         }
 
-        List<OrderItem> items = new ArrayList<>();
+        Map<Course, List<OrderItem>> byCourse = new EnumMap<>(Course.class);
         for (OrderItemDTO item : request.items()) {
-            items.add(checkItem(item));
+            OrderItem checked = checkItem(item);
+            byCourse.computeIfAbsent(courseService.getCourse(checked.getCategory()), c -> new ArrayList<>()).add(checked);
         }
 
         String waiter = request.waiter() == null || request.waiter().isBlank() ? "Service" : request.waiter().trim();
-        Order order = new Order(request.id(), request.table(), waiter, LocalDateTime.now(),
-                request.guests(), items);
-        orderDAO.save(order);
-        return order;
+        UUID submission = request.id() != null ? request.id() : UUID.randomUUID();
+        LocalDateTime now = LocalDateTime.now();
+
+        List<Order> orders = new ArrayList<>();
+        byCourse.forEach((course, items) -> {
+            int guests = orders.isEmpty() ? request.guests() : 0; // Gäste nur einmal zählen, nicht pro Gang
+            Order order = new Order(null, request.table(), waiter, now, guests, items);
+            order.setCourse(course);
+            order.setSubmissionId(submission);
+            orders.add(order);
+        });
+        orderDAO.saveAll(orders);
+        return orders;
     }
 
     private OrderItem checkItem(OrderItemDTO item) {
@@ -152,6 +171,7 @@ public class OrderService {
 
     /**
      * Setzt den nächsten Status. Schritte können nicht übersprungen oder wiederholt werden.
+     * Getränke kommen nicht aus der Küche und können direkt serviert werden.
      * Bezahlt wird getrennt davon, auch eine bezahlte Bestellung kann noch serviert werden.
      */
     public synchronized Order changeStatus(UUID id, OrderStatus target) throws SQLException {
@@ -159,7 +179,9 @@ public class OrderService {
         if (target == null || target == OrderStatus.NEU || target == OrderStatus.STORNIERT) {
             throw new IllegalArgumentException("Dieser Status kann so nicht gesetzt werden.");
         }
-        if (order.getStatus().next() != target) {
+        boolean drinkServed = !order.isKitchenOrder() && order.getStatus() == OrderStatus.NEU
+                && target == OrderStatus.ABGESCHLOSSEN;
+        if (!drinkServed && order.getStatus().next() != target) {
             throw new IllegalStateException("Bestellung #" + order.getNumber() + " ist „" + order.getStatus()
                     + "“ und kann nicht auf „" + target + "“ gesetzt werden.");
         }
@@ -180,6 +202,17 @@ public class OrderService {
         orderDAO.updateStatus(id, OrderStatus.STORNIERT);
         order.setStatus(OrderStatus.STORNIERT);
         return order;
+    }
+
+    /** Kann der Service diese Bestellung jetzt als serviert markieren? */
+    public static boolean canServe(Order order) {
+        return order.getStatus() == OrderStatus.FERTIG
+                || (!order.isKitchenOrder() && order.getStatus() == OrderStatus.NEU);
+    }
+
+    // für die Küche (KitchenService)
+    OrderDAO dao() {
+        return orderDAO;
     }
 
     private BigDecimal sum(List<Order> orders) {

@@ -4,6 +4,8 @@ import at.gastroflow.backend.api.ApiServer;
 import at.gastroflow.backend.api.Json;
 import at.gastroflow.backend.dto.BillDTO;
 import at.gastroflow.backend.dto.CreateOrderRequest;
+import at.gastroflow.backend.dto.KitchenTableDTO;
+import at.gastroflow.backend.model.Course;
 import at.gastroflow.backend.dto.OrderDTO;
 import at.gastroflow.backend.model.OrderStatus;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -30,6 +32,8 @@ public final class OrderClient {
 
     private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
     private static final TypeReference<List<OrderDTO>> ORDER_LIST = new TypeReference<>() { };
+    private static final TypeReference<List<KitchenTableDTO>> KITCHEN_LIST = new TypeReference<>() { };
+    private static final TypeReference<Map<String, Course>> COURSE_MAP = new TypeReference<>() { };
 
     private static String baseUrl = System.getProperty("gastroflow.api",
             "http://" + ApiServer.HOST + ":" + ApiServer.DEFAULT_PORT + "/api");
@@ -47,8 +51,9 @@ public final class OrderClient {
 
     // ---------- Bestellungen ----------
 
-    public static OrderDTO create(CreateOrderRequest request) {
-        return read(post("/orders", request), OrderDTO.class);
+    /** Legt die Bestellung an; zurück kommt eine Bestellung pro Gang (Getränke, Vorspeise, …). */
+    public static List<OrderDTO> create(CreateOrderRequest request) {
+        return read(post("/orders", request), ORDER_LIST);
     }
 
     public static List<OrderDTO> openOrders() {
@@ -85,6 +90,40 @@ public final class OrderClient {
     /** Kassiert den Tisch ab und gibt den bezahlten Betrag zurück. */
     public static BigDecimal pay(int table) {
         return read(post("/tables/" + table + "/pay", null), JsonNode.class).get("paid").decimalValue();
+    }
+
+    // ---------- Küche ----------
+
+    /** Tischkarten der Küche, ältester Tisch zuerst. */
+    public static List<KitchenTableDTO> kitchenTables() {
+        return read(get("/kitchen"), KITCHEN_LIST);
+    }
+
+    /** Nächsten Gang starten (auch "Weiter mit …" – geht direkt in Zubereitung). */
+    public static KitchenTableDTO startNextCourse(int table) {
+        return read(post("/kitchen/" + table + "/next", null), KitchenTableDTO.class);
+    }
+
+    public static KitchenTableDTO markCourseReady(int table) {
+        return read(post("/kitchen/" + table + "/ready", null), KitchenTableDTO.class);
+    }
+
+    public static KitchenTableDTO closeKitchenTable(int table) {
+        return read(post("/kitchen/" + table + "/close", null), KitchenTableDTO.class);
+    }
+
+    // ---------- Gang pro Kategorie ----------
+
+    public static Map<String, Course> courses(List<String> categories) {
+        return read(post("/courses/lookup", Map.of("categories", categories)), COURSE_MAP);
+    }
+
+    public static void setCourse(String category, Course course) {
+        post("/courses", Map.of("category", category, "course", course.name()));
+    }
+
+    public static void renameCategory(String from, String to) {
+        post("/courses/rename", Map.of("from", from, "to", to));
     }
 
     // ---------- HTTP ----------
