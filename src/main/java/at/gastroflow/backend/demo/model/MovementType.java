@@ -1,6 +1,5 @@
 package at.gastroflow.backend.demo.model;
 
-/** Art einer Lagerbuchung. */
 public enum MovementType {
 
     ANFANGSBESTAND("Anfangsbestand"),

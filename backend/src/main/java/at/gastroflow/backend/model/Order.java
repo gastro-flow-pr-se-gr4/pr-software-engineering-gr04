@@ -8,10 +8,9 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/** Eine Bestellung an einem Tisch. Küchenstatus und Bezahlung sind unabhängig voneinander. */
 public class Order extends BaseEntity {
 
-    private int number; // fortlaufende Nummer aus der Datenbank, 0 solange nicht gespeichert
+    private int number;
     private final int tableNumber;
     private final String waiter;
     private final LocalDateTime createdAt;
@@ -19,16 +18,14 @@ public class Order extends BaseEntity {
     private final List<OrderItem> items;
     private OrderStatus status;
     private LocalDateTime paidAt;
-    private Course course = Course.HAUPTSPEISE; // jede Bestellung gehört zu genau einem Gang
-    private boolean kitchenClosed = false;       // Küche hat den Tisch mit „Abschließen“ erledigt
-    private UUID submissionId;                   // gleiche id = beim selben Absenden entstanden
+    private Course course = Course.HAUPTSPEISE;
+    private boolean kitchenClosed = false;
+    private UUID submissionId;
 
-    //Neue Bestellung erstellen
     public Order(UUID id, int tableNumber, String waiter, LocalDateTime createdAt, int guests, List<OrderItem> items) {
         this(id, 0, tableNumber, waiter, createdAt, guests, items, OrderStatus.NEU, null);
     }
 
-    //Bestellung aus Datenbank laden
     public Order(UUID id, int number, int tableNumber, String waiter, LocalDateTime createdAt, int guests,
                  List<OrderItem> items, OrderStatus status, LocalDateTime paidAt) {
         super(id == null ? UUID.randomUUID() : id);
@@ -78,7 +75,6 @@ public class Order extends BaseEntity {
         this.status = status;
     }
 
-    /** Zeitpunkt der Bezahlung, oder null wenn noch nicht bezahlt. */
     public LocalDateTime getPaidAt() {
         return paidAt;
     }
@@ -95,7 +91,6 @@ public class Order extends BaseEntity {
         this.course = course == null ? Course.HAUPTSPEISE : course;
     }
 
-    /** Muss die Küche diese Bestellung zubereiten? Getränke bringt der Service selbst. */
     public boolean isKitchenOrder() {
         return course.isKitchen();
     }
@@ -120,17 +115,14 @@ public class Order extends BaseEntity {
         return paidAt != null;
     }
 
-    /** Noch nicht serviert und nicht storniert (neu, in Zubereitung oder fertig). */
     public boolean isOpen() {
         return status != OrderStatus.ABGESCHLOSSEN && status != OrderStatus.STORNIERT;
     }
 
-    /** Noch nicht bezahlt und nicht storniert. */
     public boolean isPaymentDue() {
         return !isPaid() && status != OrderStatus.STORNIERT;
     }
 
-    /** Läuft noch: nicht fertig serviert oder nicht bezahlt. */
     public boolean isActive() {
         return isOpen() || isPaymentDue();
     }
@@ -139,7 +131,6 @@ public class Order extends BaseEntity {
         return items.stream().map(OrderItem::getTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    /** Alle Sonderwünsche für die Küche, einer pro Zeile, z. B. "1× Classic Burger: ohne Zwiebeln". */
     public String getNoteText() {
         return items.stream()
                 .filter(item -> !item.getNote().isBlank())

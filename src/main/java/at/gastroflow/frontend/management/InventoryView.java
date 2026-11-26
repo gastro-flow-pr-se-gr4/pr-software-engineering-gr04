@@ -30,7 +30,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Bestand & Lager: Zutaten, Warnungen, Wareneingänge, Korrekturen und Lagerhistorie. */
 public class InventoryView {
 
     private static final DateTimeFormatter SHORT = DateTimeFormatter.ofPattern("dd.MM. HH:mm");
@@ -80,8 +79,6 @@ public class InventoryView {
         return String.valueOf(ingredients.stream().filter(i -> InventoryService.statusOf(i) == status).count());
     }
 
-    // ---------- Warnungen ----------
-
     private Node warningsPanel(List<Ingredient> warnings) {
         VBox lines = new VBox(8);
         for (Ingredient ingredient : warnings) {
@@ -94,8 +91,6 @@ public class InventoryView {
         }
         return Ui.panel("Lagerwarnungen", lines);
     }
-
-    // ---------- Lagerübersicht ----------
 
     private Node stockPanel() {
         List<String> categories = new ArrayList<>();
@@ -213,8 +208,6 @@ public class InventoryView {
         }
     }
 
-    // ---------- Lagerhistorie ----------
-
     private Node historyPanel() {
         List<String> names = new ArrayList<>();
         names.add(ALL_INGREDIENTS);
@@ -266,9 +259,6 @@ public class InventoryView {
         };
     }
 
-    // ---------- Dialoge ----------
-
-    /** Neue Zutat (ingredient == null) oder Zutat bearbeiten. */
     private void openIngredientDialog(Ingredient ingredient) {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle(ingredient == null ? "Zutat hinzufügen" : "Zutat bearbeiten");
@@ -292,14 +282,12 @@ public class InventoryView {
                 : ingredient.getUnit().formatNumber(ingredient.getMinStock()).replace(".", ""));
         minStock.setPromptText("z. B. 3");
 
-        // Beim Wechsel der Einheit den Mindestbestand umrechnen
         unit.valueProperty().addListener((obs, oldUnit, newUnit) -> {
             if (oldUnit != null && newUnit != null && oldUnit.isCompatible(newUnit) && !minStock.getText().isBlank()) {
                 try {
                     long base = oldUnit.toBase(Ui.parseAmount(minStock.getText(), "Mindestbestand"));
                     minStock.setText(newUnit.formatNumber(base).replace(".", ""));
                 } catch (IllegalArgumentException ignored) {
-                    // ungültige Eingabe stehen lassen
                 }
             }
         });
@@ -347,12 +335,10 @@ public class InventoryView {
         render();
     }
 
-    /** Wareneingang: Bestand erhöhen. */
     private void openReceiveDialog(Ingredient ingredient) {
         amountDialog(ingredient, "Wareneingang", "Gelieferte Menge", "Lieferung", false);
     }
 
-    /** Korrektur: neuen tatsächlichen Bestand eintragen. */
     private void openCorrectDialog(Ingredient ingredient) {
         amountDialog(ingredient, "Bestand korrigieren", "Neuer Bestand", "", true);
     }

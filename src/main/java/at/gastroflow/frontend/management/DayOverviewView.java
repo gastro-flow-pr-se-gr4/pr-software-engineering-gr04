@@ -20,7 +20,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/** Tagesübersicht: was passiert heute im Restaurant (Live-Timeline). */
 public class DayOverviewView {
 
     private static final double HOUR_WIDTH = 84;
@@ -69,8 +68,6 @@ public class DayOverviewView {
         );
     }
 
-    // ---------- Timeline ----------
-
     private Node timelinePanel(List<Reservation> reservations, LocalDateTime now) {
         RestaurantSettings settings = RestaurantSettings.get();
         LocalDateTime dayStart = now.toLocalDate().atTime(settings.getOpeningTime());
@@ -79,9 +76,8 @@ public class DayOverviewView {
         double width = hours * HOUR_WIDTH;
 
         VBox rows = new VBox(6);
-        rows.setPadding(new javafx.geometry.Insets(0, 0, 18, 0)); // Platz für die Scrollleiste
+        rows.setPadding(new javafx.geometry.Insets(0, 0, 18, 0));
 
-        // Kopfzeile mit Uhrzeiten
         Pane hourLabels = new Pane();
         hourLabels.setPrefSize(width, 20);
         for (int h = 0; h <= hours; h++) {
@@ -92,7 +88,6 @@ public class DayOverviewView {
         }
         rows.getChildren().add(new HBox(Ui.cell("", LABEL_WIDTH), hourLabels));
 
-        // Eine Zeile pro Tisch
         for (int table = 1; table <= settings.getTableCount(); table++) {
             Pane lane = new Pane();
             lane.getStyleClass().add("timeline-lane");
@@ -113,7 +108,6 @@ public class DayOverviewView {
                 }
             }
 
-            // Rote Linie für "jetzt"
             if (!now.isBefore(dayStart) && now.isBefore(dayEnd)) {
                 Region nowLine = new Region();
                 nowLine.getStyleClass().add("timeline-now");
@@ -173,8 +167,6 @@ public class DayOverviewView {
     private long minutesBetween(LocalDateTime from, LocalDateTime to) {
         return Duration.between(from, to).toMinutes();
     }
-
-    // ---------- Liste mit Aktionen ----------
 
     private Node listPanel(List<Reservation> reservations, LocalDateTime now) {
         VBox rows = new VBox();

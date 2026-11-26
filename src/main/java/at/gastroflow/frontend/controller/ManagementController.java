@@ -22,7 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-/** Leitungsansicht mit interner Navigation (Sidebar) und sieben Bereichen. */
 public class ManagementController {
 
     @FXML
@@ -34,11 +33,9 @@ public class ManagementController {
     @FXML
     private Label restaurantLabel;
 
-    // Bereichsname -> Aufbau des Inhalts
     private final Map<String, Supplier<Node>> sections = new LinkedHashMap<>();
     private final Map<String, Button> navButtons = new LinkedHashMap<>();
 
-    // Wird beim Öffnen der Leitungsansicht ausgeführt
     @FXML
     private void initialize() {
         DemoData.load();
@@ -69,7 +66,6 @@ public class ManagementController {
         navBox.getChildren().add(button);
     }
 
-    // Zeigt einen Bereich im Inhaltsbereich an
     private void showSection(String name) {
         contentPane.getChildren().setAll(sections.get(name).get());
 
@@ -85,7 +81,6 @@ public class ManagementController {
         restaurantLabel.setText(RestaurantSettings.get().getName());
     }
 
-    // Zurück zur Anmeldung
     @FXML
     private void handleLogout() {
         Navigation.toLogin(contentPane);

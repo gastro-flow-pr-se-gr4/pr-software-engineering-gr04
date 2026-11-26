@@ -11,15 +11,10 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/**
- * Eine Bestellung, die der Service gerade zusammenstellt (noch nicht an die Küche gesendet).
- * Der Entwurf lebt nur im Frontend; abgeschickt wird er über die REST-API (siehe toRequest).
- */
 public class OrderDraft {
 
     public static final int MAX_QUANTITY = 99;
 
-    /** Eine Position: Produkt, Menge und Sonderwunsch. */
     public static class Line {
 
         private final Product product;
@@ -37,7 +32,7 @@ public class OrderDraft {
         public String getNote() { return note; }
 
         public void setNote(String note) {
-            this.note = note == null ? "" : note.trim().replaceAll("\\s*\\R\\s*", ", "); // immer einzeilig
+            this.note = note == null ? "" : note.trim().replaceAll("\\s*\\R\\s*", ", ");
         }
 
         public double getTotal() {
@@ -46,7 +41,7 @@ public class OrderDraft {
     }
 
     private final int table;
-    private final UUID id = UUID.randomUUID(); // gleiche id bei doppeltem Absenden → Backend lehnt ab
+    private final UUID id = UUID.randomUUID();
     private final List<Line> lines = new ArrayList<>();
     private boolean sent = false;
 
@@ -63,10 +58,6 @@ public class OrderDraft {
     public boolean isSent() { return sent; }
     public void markSent() { sent = true; }
 
-    /**
-     * Fügt ein Produkt hinzu. Gibt es schon eine Position ohne Sonderwunsch, wird deren Menge erhöht.
-     * Positionen mit Sonderwunsch bleiben getrennt, sonst würde der Wunsch für alle Stück gelten.
-     */
     public Line add(Product product) {
         for (Line line : lines) {
             if (line.product == product && line.note.isEmpty()) {
@@ -85,7 +76,6 @@ public class OrderDraft {
         }
     }
 
-    /** Verringert die Menge, aber nie unter 1. Zum Entfernen gibt es remove(). */
     public void decrease(Line line) {
         if (line.quantity > 1) {
             line.quantity--;
@@ -100,17 +90,14 @@ public class OrderDraft {
         lines.clear();
     }
 
-    /** Gesamtpreis aller Positionen in Euro. */
     public double getTotal() {
         return roundToCents(lines.stream().mapToDouble(Line::getTotal).sum());
     }
 
-    /** Anzahl aller Artikel (2× Burger und 1× Cola = 3). */
     public int getItemCount() {
         return lines.stream().mapToInt(Line::getQuantity).sum();
     }
 
-    /** Alle Sonderwünsche für die Küche, einer pro Zeile, z. B. "1× Classic Burger: ohne Zwiebeln". */
     public String getNoteText() {
         return lines.stream()
                 .filter(line -> !line.note.isEmpty())
@@ -120,7 +107,6 @@ public class OrderDraft {
 
     public UUID getId() { return id; }
 
-    /** Anfrage für POST /api/orders: Name, Kategorie und Preis werden mitgeschickt (Preis zum Bestellzeitpunkt). */
     public CreateOrderRequest toRequest(String waiter) {
         List<OrderItemDTO> items = lines.stream()
                 .map(line -> new OrderItemDTO(line.product.getName(), line.product.getCategory(),

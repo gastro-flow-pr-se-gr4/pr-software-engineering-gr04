@@ -2,7 +2,6 @@ package at.gastroflow.backend.demo.model;
 
 import java.time.LocalDateTime;
 
-/** Eine Tischreservierung. */
 public class Reservation {
 
     private final int id;
@@ -33,7 +32,6 @@ public class Reservation {
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 
-    /** Telefonnummer, leer wenn keine hinterlegt ist. */
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
 

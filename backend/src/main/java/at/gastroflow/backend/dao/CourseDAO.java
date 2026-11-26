@@ -10,7 +10,6 @@ import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** Gang pro Kategorie der Speisekarte (Tabelle category_courses). */
 public class CourseDAO {
 
     public Map<String, Course> findAll() throws SQLException {
@@ -26,7 +25,6 @@ public class CourseDAO {
         return courses;
     }
 
-    /** Speichert oder ändert den Gang einer Kategorie. */
     public void save(String category, Course course) throws SQLException {
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(

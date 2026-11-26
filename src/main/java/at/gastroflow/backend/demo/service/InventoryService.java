@@ -24,15 +24,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-/**
- * Lagerverwaltung: Zutaten, Rezepturen, automatische Buchungen und Lagerhistorie.
- *
- * Regeln für Bestellungen:
- * - Jede Bestellung wird höchstens einmal gebucht.
- * - Gebucht wird alles oder nichts: reicht eine Zutat nicht, wird gar nichts abgezogen
- *   (der Bestand kann nie negativ werden).
- * - Storno vor der Zubereitung bucht die Zutaten zurück, danach nicht mehr.
- */
 public class InventoryService {
 
     public static final List<String> CATEGORIES = List.of(
@@ -41,7 +32,7 @@ public class InventoryService {
 
     private static final List<Ingredient> INGREDIENTS = new ArrayList<>();
     private static final List<StockMovement> MOVEMENTS = new ArrayList<>();
-    private static final Map<Integer, Map<Integer, Long>> BOOKINGS = new HashMap<>(); // Bestellnr. → (Zutat → Menge)
+    private static final Map<Integer, Map<Integer, Long>> BOOKINGS = new HashMap<>();
     private static final Set<Integer> HANDLED_ORDERS = new HashSet<>();
     private static final Set<Integer> REVERSED_ORDERS = new HashSet<>();
     private static final Map<Integer, String> PROBLEMS = new HashMap<>();
@@ -49,16 +40,12 @@ public class InventoryService {
     private static InventoryStore store;
     private static int nextId = 1;
 
-    // ---------- Laden und Speichern ----------
-
-    /** Lädt das Lager beim ersten Zugriff aus der Standard-Datei. */
     public static synchronized void ensureLoaded() {
         if (store == null) {
             init(InventoryStore.defaultFile(), true);
         }
     }
 
-    /** Lädt das Lager aus der Datei; gibt es sie noch nicht, werden Beispieldaten angelegt. */
     public static synchronized void init(Path file, boolean saveInBackground) {
         INGREDIENTS.clear();
         MOVEMENTS.clear();
@@ -97,8 +84,6 @@ public class InventoryService {
         }
         store.save(InventoryStore.serialize(nextId, INGREDIENTS, MOVEMENTS, recipes));
     }
-
-    // ---------- Zutaten ----------
 
     public static synchronized List<Ingredient> getIngredients(boolean includeArchived) {
         ensureLoaded();
@@ -150,7 +135,6 @@ public class InventoryService {
         save();
     }
 
-    /** Wareneingang: Bestand erhöhen. */
     public static synchronized void receive(Ingredient ingredient, long amount, String reason) {
         if (amount <= 0) {
             throw new IllegalArgumentException("Bitte eine Menge größer als 0 eingeben.");
@@ -162,7 +146,6 @@ public class InventoryService {
         save();
     }
 
-    /** Manuelle Korrektur auf einen neuen Bestand (z. B. nach Inventur oder Verderb). */
     public static synchronized void correct(Ingredient ingredient, long newStock, String reason) {
         if (newStock < 0) {
             throw new IllegalArgumentException("Der Bestand darf nicht negativ sein.");
@@ -187,7 +170,6 @@ public class InventoryService {
         save();
     }
 
-    /** Löschen ist nur möglich, wenn die Zutat in keiner Rezeptur vorkommt. */
     public static synchronized void deleteIngredient(Ingredient ingredient) {
         List<Product> products = usedIn(ingredient);
         if (!products.isEmpty()) {
@@ -199,7 +181,6 @@ public class InventoryService {
         save();
     }
 
-    /** Produkte, deren Rezeptur diese Zutat enthält. */
     public static synchronized List<Product> usedIn(Ingredient ingredient) {
         return MenuService.getProducts().stream()
                 .filter(p -> p.getRecipe().stream().anyMatch(r -> r.ingredientId() == ingredient.getId()))
@@ -225,8 +206,6 @@ public class InventoryService {
         }
     }
 
-    // ---------- Rezepturen ----------
-
     public static synchronized void setRecipe(Product product, List<RecipeItem> items) {
         ensureLoaded();
         Set<Integer> seen = new HashSet<>();
@@ -244,16 +223,11 @@ public class InventoryService {
         save();
     }
 
-    /** Speichert nach Änderungen an Produkten (z. B. neuer Name), damit die Rezepturen erhalten bleiben. */
     public static synchronized void persist() {
         ensureLoaded();
         save();
     }
 
-    /**
-     * Wie viele Portionen eines Gerichts mit dem aktuellen Lager möglich sind (knappste Zutat).
-     * null = keine Rezeptur hinterlegt. Jede Zahl ist eine Schätzung für dieses Gericht allein.
-     */
     public static synchronized Integer portionsFor(Product product) {
         ensureLoaded();
         if (product.getRecipe().isEmpty()) {
@@ -269,8 +243,6 @@ public class InventoryService {
         return (int) Math.min(portions, Integer.MAX_VALUE);
     }
 
-    // ---------- Status und Warnungen ----------
-
     public static synchronized StockStatus statusOf(Ingredient ingredient) {
         if (ingredient.isArchived() || ingredient.getStock() <= 0
                 || ingredient.getStock() < largestPortionNeed(ingredient)) {
@@ -281,7 +253,6 @@ public class InventoryService {
         return ingredient.getStock() <= threshold ? StockStatus.NIEDRIG : StockStatus.AUSREICHEND;
     }
 
-    // Größte Menge, die ein einzelnes Gericht von dieser Zutat braucht
     private static long largestPortionNeed(Ingredient ingredient) {
         long max = 0;
         for (Product product : MenuService.getProducts()) {
@@ -294,7 +265,6 @@ public class InventoryService {
         return max;
     }
 
-    /** Aktive Zutaten mit niedrigem oder fehlendem Bestand (Rot zuerst). */
     public static synchronized List<Ingredient> getWarnings() {
         return getIngredients(false).stream()
                 .filter(i -> statusOf(i) != StockStatus.AUSREICHEND)
@@ -310,9 +280,6 @@ public class InventoryService {
         return "Achtung: Bestand von " + ingredient.getName() + " ist knapp. Nur noch " + amount + " verfügbar.";
     }
 
-    // ---------- Buchungen durch Bestellungen ----------
-
-    /** Benötigte Zutaten für Bestellpositionen (Zutat → Menge in Basiseinheit). */
     public static synchronized Map<Integer, Long> requiredFor(List<OrderItem> items) {
         Map<Integer, Long> need = new LinkedHashMap<>();
         for (OrderItem item : items) {
@@ -327,10 +294,6 @@ public class InventoryService {
         return need;
     }
 
-    /**
-     * Zieht die Zutaten einer Bestellung vom Lager ab – genau einmal und nur, wenn alles reicht.
-     * Gibt true zurück, wenn gebucht wurde (oder nichts zu buchen war).
-     */
     public static synchronized boolean bookOrder(Order order) {
         ensureLoaded();
         if (!HANDLED_ORDERS.add(order.getNumber())) {
@@ -338,7 +301,6 @@ public class InventoryService {
         }
         Map<Integer, Long> need = requiredFor(order.getItems());
 
-        // 1. Prüfen, ob alle Zutaten reichen
         List<String> missing = new ArrayList<>();
         for (Map.Entry<Integer, Long> entry : need.entrySet()) {
             Optional<Ingredient> ingredient = findIngredient(entry.getKey());
@@ -356,7 +318,6 @@ public class InventoryService {
             return false;
         }
 
-        // 2. Alles auf einmal abbuchen
         for (Map.Entry<Integer, Long> entry : need.entrySet()) {
             Ingredient ingredient = findIngredient(entry.getKey()).orElseThrow();
             ingredient.setStock(ingredient.getStock() - entry.getValue());
@@ -368,10 +329,6 @@ public class InventoryService {
         return true;
     }
 
-    /**
-     * Storno: bucht die Zutaten zurück, wenn sie noch nicht verbraucht wurden.
-     * Gibt true zurück, wenn zurückgebucht wurde.
-     */
     public static synchronized boolean reverseOrder(Order order, boolean alreadyPrepared) {
         Map<Integer, Long> booked = BOOKINGS.get(order.getNumber());
         if (booked == null || alreadyPrepared || !REVERSED_ORDERS.add(order.getNumber())) {
@@ -392,12 +349,10 @@ public class InventoryService {
         return BOOKINGS.containsKey(order.getNumber()) && !REVERSED_ORDERS.contains(order.getNumber());
     }
 
-    /** Hinweis, falls eine Bestellung nicht gebucht werden konnte. */
     public static synchronized Optional<String> problemFor(Order order) {
         return Optional.ofNullable(PROBLEMS.get(order.getNumber()));
     }
 
-    /** Zutaten dieser Bestellung, deren Bestand knapp oder nicht ausreichend ist. */
     public static synchronized List<Ingredient> scarceIngredientsFor(Order order) {
         ensureLoaded();
         List<Ingredient> scarce = new ArrayList<>();
@@ -407,9 +362,6 @@ public class InventoryService {
         return scarce;
     }
 
-    // ---------- Lagerhistorie ----------
-
-    /** Alle Buchungen, neueste zuerst. */
     public static synchronized List<StockMovement> getMovements() {
         ensureLoaded();
         List<StockMovement> list = new ArrayList<>(MOVEMENTS);
@@ -425,8 +377,6 @@ public class InventoryService {
         MOVEMENTS.add(new StockMovement(LocalDateTime.now(), ingredient.getId(), ingredient.getName(),
                 delta, ingredient.getUnit(), type, reason));
     }
-
-    // ---------- Beispieldaten (nur beim allerersten Start) ----------
 
     private static void seedDemo() {
         Ingredient rind = seed("Rindfleisch", "Fleisch & Fisch", Unit.KILOGRAMM, 8000, 3000);

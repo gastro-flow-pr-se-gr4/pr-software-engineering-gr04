@@ -19,13 +19,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-/** Berechnet Kennzahlen für die Leitung aus den gespeicherten Bestellungen. */
 public class AnalyticsService {
 
-    /** Wie oft ein Tisch pro Tag neu besetzt wird (für die Tageskapazität). */
     private static final int SEATINGS_PER_DAY = 3;
 
-    // Stornierte Bestellungen zählen nicht zum Umsatz
     private static List<Order> ordersBetween(LocalDate from, LocalDate to) {
         return OrderService.getOrdersBetween(from.atStartOfDay(), to.plusDays(1).atStartOfDay()).stream()
                 .filter(order -> order.getStatus() != OrderStatus.STORNIERT)
@@ -49,7 +46,6 @@ public class AnalyticsService {
         return ordersBetween(from, to).stream().mapToInt(Order::getGuests).sum();
     }
 
-    /** Auslastung eines Tages: Gäste / (alle Plätze × Durchgänge), höchstens 100 %. */
     public static double occupancyOn(LocalDate date) {
         double capacity = RestaurantSettings.get().getTotalSeats() * SEATINGS_PER_DAY;
         return Math.min(1.0, guestsBetween(date, date) / capacity);
@@ -59,7 +55,6 @@ public class AnalyticsService {
         return OrderService.getOpenOrders().size();
     }
 
-    /** Tische mit offener Bestellung oder anwesenden Gästen. */
     public static Set<Integer> occupiedTables(LocalDateTime now) {
         Set<Integer> tables = new TreeSet<>();
         for (Order order : OrderService.getOpenOrders()) {
@@ -74,7 +69,6 @@ public class AnalyticsService {
         return tables;
     }
 
-    /** Meistverkaufte Produkte (Name → Stück), absteigend sortiert. */
     public static List<Map.Entry<String, Integer>> topProducts(LocalDate from, LocalDate to, int limit) {
         Map<String, Integer> counts = new HashMap<>();
         for (Order order : ordersBetween(from, to)) {
@@ -87,7 +81,6 @@ public class AnalyticsService {
         return list.subList(0, Math.min(limit, list.size()));
     }
 
-    /** Umsatz je Kategorie, absteigend sortiert. */
     public static List<Map.Entry<String, Double>> revenueByCategory(LocalDate from, LocalDate to) {
         Map<String, Double> sums = new HashMap<>();
         for (Order order : ordersBetween(from, to)) {
@@ -100,7 +93,6 @@ public class AnalyticsService {
         return list;
     }
 
-    /** Durchschnittliche Bestellungen pro Stunde (Stunde → Bestellungen pro Tag). */
     public static Map<Integer, Double> averageOrdersPerHour(LocalDate from, LocalDate to) {
         RestaurantSettings settings = RestaurantSettings.get();
         Map<Integer, Double> result = new LinkedHashMap<>();
@@ -117,7 +109,6 @@ public class AnalyticsService {
         return result;
     }
 
-    /** Durchschnittlicher Tagesumsatz je Wochentag. */
     public static Map<DayOfWeek, Double> averageRevenueByWeekday(LocalDate from, LocalDate to) {
         Map<DayOfWeek, Double> sums = new EnumMap<>(DayOfWeek.class);
         Map<DayOfWeek, Integer> days = new EnumMap<>(DayOfWeek.class);

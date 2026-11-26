@@ -22,7 +22,6 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Prüft die REST-API über echtes HTTP (Datenbank durch InMemoryOrderDAO ersetzt). */
 class ApiServerTest {
 
     private ApiServer server;

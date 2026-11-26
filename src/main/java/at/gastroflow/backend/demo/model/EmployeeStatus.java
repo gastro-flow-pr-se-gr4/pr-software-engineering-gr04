@@ -1,6 +1,5 @@
 package at.gastroflow.backend.demo.model;
 
-/** Aktueller Status einer Mitarbeiterin / eines Mitarbeiters. */
 public enum EmployeeStatus {
 
     IM_DIENST("Im Dienst"),

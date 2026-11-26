@@ -1,10 +1,5 @@
 package at.gastroflow.backend.demo.model;
 
-/**
- * Eine Position einer Bestellung.
- * Name, Kategorie und Preis werden beim Bestellen kopiert,
- * damit spätere Preisänderungen bestehende Bestellungen nicht verändern.
- */
 public class OrderItem {
 
     private final String productName;

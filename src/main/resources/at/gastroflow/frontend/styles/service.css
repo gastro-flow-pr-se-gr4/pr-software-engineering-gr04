@@ -280,8 +280,6 @@
     -fx-background-radius: 5;
 }
 
-/* Positionen der aktuellen Bestellung */
-
 .order-line {
     -fx-padding: 13 8;
     -fx-cursor: hand;
@@ -311,8 +309,6 @@
     -fx-background-radius: 8;
     -fx-padding: 10 14;
 }
-
-/* Seiten-Tabs in der Kopfzeile */
 
 .service-tab {
     -fx-background-color: transparent;
@@ -347,8 +343,6 @@
     -fx-font-weight: bold;
     -fx-text-fill: #10243c;
 }
-
-/* Reservierungen heute */
 
 .res-time {
     -fx-font-weight: bold;

@@ -28,16 +28,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-/** Dialoge für Reservierungen (genutzt von Tagesübersicht und Kalender – gleiche Daten). */
 public final class ReservationDialog {
 
     private ReservationDialog() {
     }
 
-    /**
-     * Neue Reservierung (existing == null) oder bestehende bearbeiten.
-     * Gibt true zurück, wenn gespeichert wurde.
-     */
     public static boolean show(Reservation existing, LocalDate suggestedDate) {
         RestaurantSettings settings = RestaurantSettings.get();
 
@@ -47,7 +42,6 @@ public final class ReservationDialog {
         ButtonType save = new ButtonType("Speichern", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(save, ButtonType.CANCEL);
 
-        // Eingabefelder
         TextField name = new TextField(existing == null ? "" : existing.getName());
         name.setPromptText("Name des Gastes");
         TextField phone = new TextField(existing == null ? "" : existing.getPhone());
@@ -87,7 +81,6 @@ public final class ReservationDialog {
         note.setPrefRowCount(2);
         note.setWrapText(true);
 
-        // Live-Prüfung: Tisch frei und genug Plätze?
         Label availability = new Label();
         availability.setWrapText(true);
         Label error = new Label();
@@ -145,7 +138,6 @@ public final class ReservationDialog {
         content.setPrefWidth(500);
         dialog.getDialogPane().setContent(content);
 
-        // Speichern nur, wenn alles gültig ist – sonst bleibt der Dialog offen
         Node saveButton = dialog.getDialogPane().lookupButton(save);
         saveButton.addEventFilter(ActionEvent.ACTION, event -> {
             try {
@@ -168,7 +160,6 @@ public final class ReservationDialog {
         return result.isPresent() && result.get() == save;
     }
 
-    /** Lässt einen freien, passenden Tisch auswählen. Gibt true zurück, wenn ein Tisch zugewiesen wurde. */
     public static boolean assignTable(Reservation reservation) {
         List<Integer> free = ReservationService.getFreeTables(
                 reservation.getStart(), reservation.getDurationMinutes(), reservation.getPersons(), reservation);
@@ -197,7 +188,6 @@ public final class ReservationDialog {
         }
     }
 
-    /** Fragt nach und löscht die Reservierung. */
     public static boolean cancel(Reservation reservation) {
         boolean yes = Ui.confirm("Reservierung von " + reservation.getName() + " am "
                 + reservation.getStart().format(Ui.DATE) + " um " + reservation.getStart().format(Ui.TIME)
@@ -208,7 +198,6 @@ public final class ReservationDialog {
         return yes;
     }
 
-    /** Text für Tooltips: alle Infos zu einer Reservierung. */
     public static String details(Reservation reservation, LocalDateTime now) {
         return reservation.getName() + "\n"
                 + reservation.getStart().format(Ui.TIME) + "–" + reservation.getEnd().format(Ui.TIME) + " Uhr"

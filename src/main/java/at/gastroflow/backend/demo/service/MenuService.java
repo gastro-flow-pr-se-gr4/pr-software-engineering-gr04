@@ -6,17 +6,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Speisekarte: Kategorien und Produkte (gemeinsame Datenquelle).
- * Das Service-Dashboard soll seine Produktauswahl aus getAvailableProducts() holen.
- */
 public class MenuService {
 
     private static final List<String> CATEGORIES = new ArrayList<>();
     private static final List<Product> PRODUCTS = new ArrayList<>();
     private static int nextId = 1;
 
-    // Start-Speisekarte (Allergene nach österreichischem Code, z. B. A = Gluten, G = Milch)
     static {
         seed("Vorspeisen", "Bruschetta", 7.90, "A");
         seed("Vorspeisen", "Caesar Salad", 9.90, "A, C, D, G, M");
@@ -54,8 +49,6 @@ public class MenuService {
         }
         PRODUCTS.add(new Product(nextId++, name, price, category, allergens, null, true));
     }
-
-    // ---------- Kategorien ----------
 
     public static List<String> getCategories() {
         return Collections.unmodifiableList(CATEGORIES);
@@ -101,8 +94,6 @@ public class MenuService {
         return clean;
     }
 
-    // ---------- Produkte ----------
-
     public static List<Product> getProducts() {
         return Collections.unmodifiableList(PRODUCTS);
     }
@@ -115,7 +106,6 @@ public class MenuService {
         return PRODUCTS.stream().filter(p -> p.getName().equals(name)).findFirst().orElse(null);
     }
 
-    /** Nur Produkte, die neu bestellt werden dürfen (für das Service-Dashboard). */
     public static List<Product> getAvailableProducts() {
         return PRODUCTS.stream().filter(Product::isAvailable).toList();
     }

@@ -4,8 +4,6 @@
     -fx-font-size: 14px;
 }
 
-/* Kopfzeile */
-
 .header {
     -fx-padding: 18 24;
     -fx-background-color: white;
@@ -37,8 +35,6 @@
     -fx-background-color: #d4dce6;
 }
 
-/* Sidebar */
-
 .sidebar {
     -fx-background-color: white;
     -fx-border-color: #d8dfe8;
@@ -66,8 +62,6 @@
     -fx-text-fill: white;
 }
 
-/* Scrollbereich */
-
 .page-scroll {
     -fx-background-color: transparent;
     -fx-background: #f4f6fa;
@@ -80,8 +74,6 @@
 .content-layout {
     -fx-padding: 24 22;
 }
-
-/* Überschriften und Texte */
 
 .page-title {
     -fx-font-size: 26px;
@@ -133,8 +125,6 @@
     -fx-font-size: 13px;
 }
 
-/* Statistik-Karten */
-
 .stat-card {
     -fx-background-color: white;
     -fx-background-radius: 12;
@@ -160,8 +150,6 @@
     -fx-text-fill: #6d7d94;
 }
 
-/* Kasten */
-
 .panel {
     -fx-background-color: white;
     -fx-background-radius: 12;
@@ -169,8 +157,6 @@
     -fx-border-radius: 12;
     -fx-padding: 22;
 }
-
-/* Status-Etiketten */
 
 .status-label {
     -fx-font-size: 11px;
@@ -184,8 +170,6 @@
 .status-orange { -fx-background-color: #fff1d6; -fx-text-fill: #986000; }
 .status-gray   { -fx-background-color: #e8ecf1; -fx-text-fill: #52647a; }
 .status-red    { -fx-background-color: #fde2e1; -fx-text-fill: #b42318; }
-
-/* Buttons */
 
 .button {
     -fx-cursor: hand;
@@ -237,8 +221,6 @@
     -fx-opacity: 0.55;
 }
 
-/* Umschalter (Tag / Woche / Monat usw.) */
-
 .segment {
     -fx-background-color: #eef2f7;
     -fx-background-radius: 9;
@@ -257,8 +239,6 @@
     -fx-text-fill: #10243c;
     -fx-effect: dropshadow(gaussian, rgba(16, 36, 60, 0.12), 4, 0, 0, 1);
 }
-
-/* Tabellen */
 
 .table-heading {
     -fx-padding: 0 6 8 6;
@@ -293,8 +273,6 @@
     -fx-opacity: 0.45;
 }
 
-/* Speisekarte */
-
 .category-row {
     -fx-padding: 8 10;
     -fx-background-radius: 8;
@@ -325,8 +303,6 @@
     -fx-text-fill: #8a9bb0;
 }
 
-/* Rangliste mit Balken */
-
 .rank-bar {
     -fx-pref-height: 8;
 }
@@ -343,8 +319,6 @@
     -fx-background-insets: 0;
     -fx-background-radius: 4;
 }
-
-/* Diagramme */
 
 .chart-plot-background {
     -fx-background-color: transparent;
@@ -391,8 +365,6 @@
     -fx-bar-fill: #3f9a68;
 }
 
-/* Timeline (Tagesübersicht) */
-
 .timeline-scroll {
     -fx-background-color: transparent;
     -fx-background: white;
@@ -433,8 +405,6 @@
 .block-orange { -fx-background-color: #d98a12; }
 .block-gray   { -fx-background-color: #9aa8b8; }
 .block-red    { -fx-background-color: #d92d20; }
-
-/* Kalender */
 
 .calendar-column {
     -fx-background-color: #f7f9fc;
@@ -490,8 +460,6 @@
 .entry-gray   { -fx-border-color: #9aa8b8; }
 .entry-red    { -fx-border-color: #d92d20; }
 
-/* Lagerwarnung auf dem Dashboard */
-
 .warning-banner {
     -fx-background-color: #fff4df;
     -fx-border-color: #f2c879;
@@ -530,8 +498,6 @@
 .plus-text  { -fx-text-fill: #287044; }
 .minus-text { -fx-text-fill: #b42318; }
 
-/* Vergleich mit dem vorherigen Zeitraum */
-
 .compare-card {
     -fx-background-color: #f7f9fc;
     -fx-background-radius: 10;
@@ -561,8 +527,6 @@
     -fx-background-color: transparent;
 }
 
-/* Menü-Button "Mehr" im Lager */
-
 .small-menu {
     -fx-background-color: #eef2f7;
     -fx-background-radius: 6;
@@ -584,8 +548,6 @@
     -fx-background-color: transparent;
     -fx-background: white;
 }
-
-/* Formulare und Dialoge */
 
 .text-field, .combo-box, .spinner, .date-picker {
     -fx-background-radius: 7;

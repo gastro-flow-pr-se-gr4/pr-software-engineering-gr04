@@ -2,7 +2,6 @@ package at.gastroflow.backend.demo.model;
 
 import java.time.LocalDateTime;
 
-/** Eine Zutat im Lager. Bestand und Mindestbestand stehen in der Basiseinheit (Stück, g, ml). */
 public class Ingredient {
 
     private final int id;
@@ -34,7 +33,6 @@ public class Ingredient {
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
 
-    /** Einheit für die Anzeige (z. B. Kilogramm). */
     public Unit getUnit() { return unit; }
     public void setUnit(Unit unit) { this.unit = unit; }
 

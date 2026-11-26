@@ -12,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Tests für den Bestellentwurf im Service (Positionen, Mengen, Preis, Sonderwünsche). */
 class OrderDraftTest {
 
     private OrderDraft draft;
@@ -26,8 +25,6 @@ class OrderDraftTest {
         cola = MenuService.getAvailableProducts().stream()
                 .filter(p -> p.getName().contains("Cola")).findFirst().orElseThrow();
     }
-
-    // ---------- Positionen und Mengen (#17) ----------
 
     @Test
     void addingSameProductIncreasesQuantity() {
@@ -63,8 +60,6 @@ class OrderDraftTest {
         assertSame(cola, draft.getLines().get(0).getProduct());
     }
 
-    // ---------- Gesamtpreis (#41) ----------
-
     @Test
     void totalIsSumOfAllLines() {
         OrderDraft.Line line = draft.add(burger);
@@ -80,7 +75,7 @@ class OrderDraftTest {
         Product cheap = new Product(9001, "Test", 0.1, "Test", "", null, true);
         OrderDraft.Line line = draft.add(cheap);
         draft.increase(line);
-        draft.increase(line); // 0.1 * 3 wäre ohne Runden 0.30000000000000004
+        draft.increase(line);
 
         assertEquals(0.3, draft.getTotal());
     }
@@ -90,8 +85,6 @@ class OrderDraftTest {
         assertEquals(0, draft.getTotal());
         assertTrue(draft.isEmpty());
     }
-
-    // ---------- Sonderwünsche (#53) ----------
 
     @Test
     void sameProductWithAndWithoutRequestAreSeparateLines() {
@@ -111,8 +104,6 @@ class OrderDraftTest {
         assertEquals("1× Classic Burger: ohne Zwiebeln, extra Käse", draft.getNoteText());
     }
 
-    // ---------- Anfrage für die REST-API ----------
-
     @Test
     void requestCarriesAllLinesAndTheSameIdEveryTime() {
         draft.add(burger).setNote("ohne Zwiebeln");
@@ -124,6 +115,6 @@ class OrderDraftTest {
         assertEquals(2, request.items().size());
         assertEquals("ohne Zwiebeln", request.items().get(0).note());
         assertEquals(0, BigDecimal.valueOf(burger.getPrice()).compareTo(request.items().get(0).unitPrice()));
-        assertEquals(request.id(), draft.toRequest("Service").id()); // doppeltes Absenden erkennt das Backend
+        assertEquals(request.id(), draft.toRequest("Service").id());
     }
 }

@@ -35,7 +35,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Bestellungsübersicht: alle Bestellungen nach Status, verzögerte und knappe Zutaten hervorgehoben. */
 public class OrdersView {
 
     private static final String ALL = "Alle";
@@ -52,7 +51,6 @@ public class OrdersView {
         LocalDateTime now = LocalDateTime.now();
         int delay = RestaurantSettings.get().getDelayMinutes();
 
-        // Offene Bestellungen + heute abgeschlossene/stornierte (von der REST-API)
         List<OrderDTO> orders = new ArrayList<>();
         String loadError = null;
         try {
@@ -128,7 +126,6 @@ public class OrdersView {
             duration = Ui.cell(order.getMinutesSinceCreated(now) + " min", 78);
         }
 
-        // Produkte + interne Lager-Hinweise
         Label items = new Label(order.course() + ": " + order.getItemsText());
         items.setWrapText(true);
         VBox productBox = new VBox(3, items);
@@ -195,7 +192,6 @@ public class OrdersView {
         render();
     }
 
-    /** Testbestellung der Leitung, um die automatische Lagerbuchung auszuprobieren. */
     private void openTestOrderDialog() {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle("Testbestellung");

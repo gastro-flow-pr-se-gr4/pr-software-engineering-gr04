@@ -12,10 +12,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * Küche: jeder Tisch wird Gang für Gang gekocht (Vorspeise → Hauptspeise → Nachspeise).
- * Getränke erscheinen hier nicht, die bringt der Service.
- */
 public class KitchenService {
 
     private final OrderService orderService;
@@ -25,7 +21,6 @@ public class KitchenService {
         this.orderService = orderService;
     }
 
-    /** Laufende Küchenbestellungen eines Tisches (ohne Getränke, ohne Abgeschlossene), nach Gang und Zeit. */
     public List<Order> getKitchenOrders(int table) throws SQLException {
         return kitchenOrders().stream().filter(order -> order.getTableNumber() == table).toList();
     }
@@ -34,7 +29,6 @@ public class KitchenService {
         return getKitchenOrders(table).stream().filter(order -> order.getStatus() == status).toList();
     }
 
-    /** Tische, bei denen die Küche noch etwas zu tun hat oder abschließen kann (ältester zuerst). */
     public List<Integer> getKitchenTables() throws SQLException {
         List<Integer> tables = kitchenOrders().stream()
                 .sorted(Comparator.comparing(Order::getCreatedAt))
@@ -50,17 +44,10 @@ public class KitchenService {
         return result;
     }
 
-    /** Nächster Gang, der noch nicht begonnen wurde – leer, wenn alles begonnen ist. */
     public Optional<Course> getNextCourse(int table) throws SQLException {
         return getKitchenOrders(table, OrderStatus.NEU).stream().map(Order::getCourse).min(Comparator.naturalOrder());
     }
 
-    /**
-     * In welcher Küchenspalte steht der Tisch?
-     * NEU: noch nichts begonnen. IN_ZUBEREITUNG: ein Gang wird gekocht.
-     * FERTIG: ein Gang ist fertig oder serviert – es kommt noch einer, oder die Küche kann abschließen.
-     * null: die Küche hat für diesen Tisch nichts (mehr) zu tun.
-     */
     public OrderStatus getStage(int table) throws SQLException {
         List<Order> orders = getKitchenOrders(table);
         boolean preparing = orders.stream().anyMatch(order -> order.getStatus() == OrderStatus.IN_ZUBEREITUNG);
@@ -79,10 +66,6 @@ public class KitchenService {
         return null;
     }
 
-    /**
-     * Startet den nächsten Gang: alle neuen Bestellungen dieses Gangs gehen direkt in Zubereitung
-     * (auch bei "Weiter mit …" – nicht zurück nach Neu). Nicht bestellte Gänge werden übersprungen.
-     */
     public synchronized Course startNextCourse(int table) throws SQLException {
         if (!getKitchenOrders(table, OrderStatus.IN_ZUBEREITUNG).isEmpty()) {
             throw new IllegalStateException("Bei Tisch " + table + " ist noch ein Gang in Zubereitung. Bitte zuerst „Fertig“ drücken.");
@@ -97,7 +80,6 @@ public class KitchenService {
         return course;
     }
 
-    /** Alles, was bei einem Tisch gerade gekocht wird, ist fertig. */
     public synchronized void markCourseReady(int table) throws SQLException {
         List<Order> preparing = getKitchenOrders(table, OrderStatus.IN_ZUBEREITUNG);
         if (preparing.isEmpty()) {
@@ -108,17 +90,12 @@ public class KitchenService {
         }
     }
 
-    /** Abschließen geht erst, wenn alle Gänge fertig sind und keiner mehr wartet. */
     public boolean canClose(int table) throws SQLException {
         List<Order> orders = getKitchenOrders(table);
         return !orders.isEmpty() && orders.stream().allMatch(order ->
                 order.getStatus() == OrderStatus.FERTIG || order.getStatus() == OrderStatus.ABGESCHLOSSEN);
     }
 
-    /**
-     * Die Küche ist mit dem Tisch fertig und nimmt ihn aus der Übersicht.
-     * Noch nicht servierte Gänge bleiben beim Service, bis sie serviert sind.
-     */
     public synchronized void closeTable(int table) throws SQLException {
         if (!canClose(table)) {
             throw new IllegalStateException("Tisch " + table + " kann erst abgeschlossen werden, wenn alle Gänge fertig sind.");
@@ -127,7 +104,6 @@ public class KitchenService {
         orderService.dao().closeKitchen(ids);
     }
 
-    /** Alles, was die Küchenansicht für einen Tisch braucht. */
     public KitchenTableDTO getTable(int table) throws SQLException {
         List<Order> orders = getKitchenOrders(table);
         List<KitchenTableDTO.CourseProgressDTO> courses = new java.util.ArrayList<>();
@@ -150,7 +126,6 @@ public class KitchenService {
         return result;
     }
 
-    // Küchenbestellung, die noch läuft und die Küche noch nicht abgeschlossen hat
     private List<Order> kitchenOrders() throws SQLException {
         return orderService.getActiveOrders().stream()
                 .filter(order -> order.isKitchenOrder() && order.getStatus() != OrderStatus.STORNIERT

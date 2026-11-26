@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/** Einstellungen des Restaurants, die in allen Bereichen der Leitung gelten. */
 public class SettingsView {
 
     private final VBox content = new VBox(24);
@@ -48,7 +47,6 @@ public class SettingsView {
         Spinner<Integer> duration = new Spinner<>(30, 300, settings.getDefaultReservationMinutes(), 15);
         Spinner<Integer> lowStock = new Spinner<>(50, 300, settings.getLowStockPercent(), 10);
 
-        // Tische und Plätze pro Tisch
         Spinner<Integer> tableCount = new Spinner<>(1, 40, settings.getTableCount());
         FlowPane capacities = new FlowPane(10, 10);
         capacities.setPrefWrapLength(700);
@@ -117,7 +115,6 @@ public class SettingsView {
         try {
             List<Integer> capacities = capacitySpinners.stream().map(Spinner::getValue).toList();
 
-            // Keine künftige Reservierung darf ihren Tisch oder genug Plätze verlieren
             Optional<Reservation> blocked = ReservationService.getReservations().stream()
                     .filter(r -> r.getStart().isAfter(LocalDateTime.now()))
                     .filter(r -> r.getStatus().blocksTable())
@@ -129,7 +126,6 @@ public class SettingsView {
                         + r.getPersons() + " Personen, " + r.getStart().format(Ui.DATE) + ") reserviert. Bitte zuerst umbuchen.");
             }
 
-            // Kein Tisch mit laufender Bestellung darf verschwinden, sonst kann er nicht abkassiert werden
             for (int table = capacities.size() + 1; table <= RestaurantSettings.get().getTableCount(); table++) {
                 boolean occupied;
                 try {

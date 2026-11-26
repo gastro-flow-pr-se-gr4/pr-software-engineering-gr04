@@ -19,12 +19,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
-/**
- * Bestellverwaltung: Regeln für Anlegen, Statusschritte, Bezahlen und Stornieren.
- * Fehler werfen eine Exception mit verständlicher Meldung:
- * IllegalArgumentException = ungültige Eingabe, IllegalStateException = Schritt gerade nicht erlaubt,
- * NoSuchElementException = Bestellung gibt es nicht.
- */
 public class OrderService {
 
     public static final int MAX_QUANTITY = 99;
@@ -42,13 +36,6 @@ public class OrderService {
         this.courseService = courseService;
     }
 
-    // ---------- Anlegen ----------
-
-    /**
-     * Prüft die Anfrage und speichert sie aufgeteilt nach Gängen: eine Bestellung pro Gang
-     * (Getränke, Vorspeise, Hauptspeise, Nachspeise, in dieser Reihenfolge), alle mit Status Neu.
-     * Getränke gehen nicht in die Küche. Bei einem Fehler wird nichts gespeichert.
-     */
     public synchronized List<Order> createOrder(CreateOrderRequest request) throws SQLException {
         if (request == null || request.items() == null || request.items().isEmpty()) {
             throw new IllegalArgumentException("Die Bestellung ist leer. Bitte zuerst ein Produkt auswählen.");
@@ -75,7 +62,7 @@ public class OrderService {
 
         List<Order> orders = new ArrayList<>();
         byCourse.forEach((course, items) -> {
-            int guests = orders.isEmpty() ? request.guests() : 0; // Gäste nur einmal zählen, nicht pro Gang
+            int guests = orders.isEmpty() ? request.guests() : 0;
             Order order = new Order(null, request.table(), waiter, now, guests, items);
             order.setCourse(course);
             order.setSubmissionId(submission);
@@ -96,14 +83,12 @@ public class OrderService {
         if (item.unitPrice() == null || item.unitPrice().compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("Der Preis von " + name + " ist ungültig.");
         }
-        String note = item.note() == null ? "" : item.note().trim().replaceAll("\\s*\\R\\s*", ", "); // immer einzeilig
+        String note = item.note() == null ? "" : item.note().trim().replaceAll("\\s*\\R\\s*", ", ");
         if (note.length() > MAX_NOTE_LENGTH) {
             throw new IllegalArgumentException("Der Sonderwunsch zu " + name + " ist zu lang.");
         }
         return new OrderItem(name, item.category(), item.unitPrice(), item.quantity(), note);
     }
-
-    // ---------- Abfragen ----------
 
     public List<Order> getAllOrders() throws SQLException {
         return orderDAO.findAll();
@@ -117,12 +102,10 @@ public class OrderService {
         return order;
     }
 
-    /** Noch nicht serviert und nicht storniert – das, woran Küche und Service arbeiten. */
     public List<Order> getOpenOrders() throws SQLException {
         return orderDAO.findActive().stream().filter(Order::isOpen).toList();
     }
 
-    /** Alles, was noch läuft: unbezahlt oder noch nicht serviert. */
     public List<Order> getActiveOrders() throws SQLException {
         return orderDAO.findActive();
     }
@@ -131,7 +114,6 @@ public class OrderService {
         return orderDAO.findActive().stream().filter(order -> order.getTableNumber() == table).toList();
     }
 
-    /** Gesendete, noch nicht bezahlte Bestellungen eines Tisches (älteste zuerst). */
     public List<Order> getUnpaidOrders(int table) throws SQLException {
         return getActiveOrders(table).stream().filter(Order::isPaymentDue).toList();
     }
@@ -142,22 +124,14 @@ public class OrderService {
                 .toList();
     }
 
-    /** Offener Betrag eines Tisches in Euro. */
     public BigDecimal getAmountDue(int table) throws SQLException {
         return sum(getUnpaidOrders(table));
     }
 
-    /** Ein Tisch ist besetzt, solange etwas nicht serviert oder nicht bezahlt ist. */
     public boolean isTableOccupied(int table) throws SQLException {
         return !getActiveOrders(table).isEmpty();
     }
 
-    // ---------- Bezahlen ----------
-
-    /**
-     * Kassiert alle offenen Bestellungen eines Tisches ab und gibt den bezahlten Betrag zurück.
-     * Was noch nicht serviert ist, bleibt sichtbar und hält den Tisch besetzt.
-     */
     public synchronized BigDecimal payTable(int table) throws SQLException {
         List<Order> unpaid = getUnpaidOrders(table);
         if (unpaid.isEmpty()) {
@@ -167,13 +141,6 @@ public class OrderService {
         return sum(unpaid);
     }
 
-    // ---------- Weg der Bestellung: Neu → In Zubereitung → Fertig → serviert ----------
-
-    /**
-     * Setzt den nächsten Status. Schritte können nicht übersprungen oder wiederholt werden.
-     * Getränke kommen nicht aus der Küche und können direkt serviert werden.
-     * Bezahlt wird getrennt davon, auch eine bezahlte Bestellung kann noch serviert werden.
-     */
     public synchronized Order changeStatus(UUID id, OrderStatus target) throws SQLException {
         Order order = getOrder(id);
         if (target == null || target == OrderStatus.NEU || target == OrderStatus.STORNIERT) {
@@ -190,7 +157,6 @@ public class OrderService {
         return order;
     }
 
-    /** Storniert eine offene, noch nicht bezahlte Bestellung. */
     public synchronized Order cancel(UUID id) throws SQLException {
         Order order = getOrder(id);
         if (!order.isOpen()) {
@@ -204,13 +170,11 @@ public class OrderService {
         return order;
     }
 
-    /** Kann der Service diese Bestellung jetzt als serviert markieren? */
     public static boolean canServe(Order order) {
         return order.getStatus() == OrderStatus.FERTIG
                 || (!order.isKitchenOrder() && order.getStatus() == OrderStatus.NEU);
     }
 
-    // für die Küche (KitchenService)
     OrderDAO dao() {
         return orderDAO;
     }

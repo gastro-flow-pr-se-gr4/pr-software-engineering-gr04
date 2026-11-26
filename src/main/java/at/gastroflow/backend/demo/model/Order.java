@@ -7,7 +7,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/** Eine Bestellung an einem Tisch. */
 public class Order {
 
     private int number;
@@ -42,14 +41,12 @@ public class Order {
 
     public List<OrderItem> getItems() { return Collections.unmodifiableList(items); }
 
-    /** Sonderwunsch zur Bestellung (leer, wenn keiner). */
     public String getNote() { return note; }
     public void setNote(String note) { this.note = note == null ? "" : note.trim(); }
 
     public OrderStatus getStatus() { return status; }
     public void setStatus(OrderStatus status) { this.status = status; }
 
-    /** Noch nicht abgeschlossen oder storniert (neu, in Zubereitung oder fertig). */
     public boolean isOpen() {
         return status != OrderStatus.ABGESCHLOSSEN && status != OrderStatus.STORNIERT;
     }
@@ -62,7 +59,6 @@ public class Order {
         return Math.max(0, Duration.between(createdAt, now).toMinutes());
     }
 
-    /** Z. B. "2× Classic Burger, 1× Coca-Cola 0,33 l" */
     public String getItemsText() {
         return items.stream()
                 .map(item -> item.getQuantity() + "× " + item.getProductName())

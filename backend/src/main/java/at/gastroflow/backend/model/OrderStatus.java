@@ -1,6 +1,5 @@
 package at.gastroflow.backend.model;
 
-/** Status einer Bestellung von der Aufnahme bis zum Abschluss. */
 public enum OrderStatus {
 
     NEU("Neu"),
@@ -15,7 +14,6 @@ public enum OrderStatus {
         this.label = label;
     }
 
-    /** Erlaubter nächster Schritt: Neu → In Zubereitung → Fertig → Abgeschlossen (serviert). */
     public OrderStatus next() {
         return switch (this) {
             case NEU -> IN_ZUBEREITUNG;
