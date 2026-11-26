@@ -834,14 +834,20 @@ public class ServiceController {
             warning(e.getMessage());
             return;
         }
-        long notServed = bill.orders().stream()
-                .filter(order -> order.isPaymentDue() && order.isOpen())
-                .count();
+        int notServed = 0;
+        String openOrders = "";
+        for (OrderDTO order : bill.orders()) {
+            if (order.isPaymentDue() && order.isOpen()) {
+                notServed++;
+                openOrders += "\n- #" + order.number() + " " + order.course() + " (" + order.status() + ")";
+            }
+        }
 
         String question = "Tisch " + table + " abkassieren?\n\nZu zahlen: " + formatPrice(bill.amountDue());
         if (notServed > 0) {
             question += "\n\nAchtung: " + (notServed == 1 ? "1 Bestellung ist" : notServed + " Bestellungen sind")
-                    + " noch nicht serviert. Der Tisch bleibt besetzt, bis alles serviert ist.";
+                    + " noch nicht serviert:" + openOrders
+                    + "\n\nIm Service bei der Bestellung auf \"Serviert\" drücken. Der Tisch bleibt besetzt, bis alles serviert ist.";
         }
         if (!Ui.confirm(question, "Bezahlt")) {
             return;
