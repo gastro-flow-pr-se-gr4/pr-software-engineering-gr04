@@ -308,9 +308,7 @@ public class InventoryView {
         error.getStyleClass().add("error-text");
         error.setWrapText(true);
 
-        GridPane form = new GridPane();
-        form.setHgap(14);
-        form.setVgap(12);
+        GridPane form = Ui.form(14, 12);
         form.addRow(0, new Label("Name"), name);
         form.addRow(1, new Label("Kategorie"), category);
         form.addRow(2, new Label("Einheit"), unit);
@@ -377,9 +375,7 @@ public class InventoryView {
         error.getStyleClass().add("error-text");
         error.setWrapText(true);
 
-        GridPane form = new GridPane();
-        form.setHgap(14);
-        form.setVgap(12);
+        GridPane form = Ui.form(14, 12);
         form.addRow(0, new Label(amountLabel), new HBox(8, amount, unit));
         form.addRow(1, new Label(correction ? "Grund (Pflicht)" : "Grund"), reason);
 

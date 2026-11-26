@@ -242,9 +242,7 @@ public class OrdersView {
         quantity.valueProperty().addListener((obs, o, n) -> update.run());
         update.run();
 
-        GridPane form = new GridPane();
-        form.setHgap(14);
-        form.setVgap(12);
+        GridPane form = Ui.form(14, 12);
         form.addRow(0, new Label("Produkt"), product);
         form.addRow(1, new Label("Menge"), quantity);
         form.addRow(2, new Label("Tisch"), table);

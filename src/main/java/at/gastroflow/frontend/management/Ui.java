@@ -18,6 +18,8 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -154,6 +156,22 @@ public final class Ui {
         Region region = new Region();
         HBox.setHgrow(region, Priority.ALWAYS);
         return region;
+    }
+
+    // damit die labels nicht mehr abgeschnitten werden
+    public static GridPane form(double hgap, double vgap) {
+        GridPane form = new GridPane();
+        form.setHgap(hgap);
+        form.setVgap(vgap);
+
+        ColumnConstraints labelColumn = new ColumnConstraints();
+        labelColumn.setMinWidth(Region.USE_PREF_SIZE);
+
+        ColumnConstraints fieldColumn = new ColumnConstraints();
+        fieldColumn.setHgrow(Priority.ALWAYS);
+
+        form.getColumnConstraints().addAll(labelColumn, fieldColumn);
+        return form;
     }
 
     // ---------- Kleine Elemente ----------

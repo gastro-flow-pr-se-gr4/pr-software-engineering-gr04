@@ -154,15 +154,15 @@ public class DemoData {
 
         // Beispiele für heute (Lisa Wagner bewusst ohne Telefonnummer)
         add("Markus Weber", "+43 650 2223344", 2, 1, today.atTime(11, 0), 60, ReservationStatus.ABGESCHLOSSEN, "");
-        add("Julia Hofer", "+43 699 1112233", 2, 6, today.atTime(11, 30), 90, ReservationStatus.NO_SHOW, "");
-        add("Max Mustermann", "+43 660 1234567", 2, 4, today.atTime(12, 0), 90, ReservationStatus.ANWESEND, "");
-        add("Anna Müller", "+43 664 9876543", 4, 7, today.atTime(12, 30), 90, ReservationStatus.BESTAETIGT, "Geburtstag");
-        add("Thomas Berger", "+43 676 5554433", 3, 2, today.atTime(13, 0), 90, ReservationStatus.BESTAETIGT, "");
+        add("Julia Hofer", "+43 699 1112233", 2, 6, today.atTime(11, 30), ReservationService.DURATION_MINUTES, ReservationStatus.NO_SHOW, "");
+        add("Max Mustermann", "+43 660 1234567", 2, 4, today.atTime(12, 0), ReservationService.DURATION_MINUTES, ReservationStatus.ANWESEND, "");
+        add("Anna Müller", "+43 664 9876543", 4, 7, today.atTime(12, 30), ReservationService.DURATION_MINUTES, ReservationStatus.BESTAETIGT, "Geburtstag");
+        add("Thomas Berger", "+43 676 5554433", 3, 2, today.atTime(13, 0), ReservationService.DURATION_MINUTES, ReservationStatus.BESTAETIGT, "");
         add("Lisa Wagner", "", 5, 9, today.atTime(13, 30), 120, ReservationStatus.BESTAETIGT, "");
         add("Familie Huber", "+43 680 7778899", 6, 10, today.atTime(18, 0), 120, ReservationStatus.BESTAETIGT, "Kinderstuhl benötigt");
-        add("Sarah Klein", "+43 660 3332211", 2, 3, today.atTime(19, 0), 90, ReservationStatus.BESTAETIGT, "");
-        add("Peter Gruber", "+43 664 4445566", 4, 5, today.atTime(19, 30), 90, ReservationStatus.BESTAETIGT, "");
-        add("Clara Schmid", "+43 676 9990011", 3, 8, today.atTime(20, 0), 90, ReservationStatus.BESTAETIGT, "");
+        add("Sarah Klein", "+43 660 3332211", 2, 3, today.atTime(19, 0), ReservationService.DURATION_MINUTES, ReservationStatus.BESTAETIGT, "");
+        add("Peter Gruber", "+43 664 4445566", 4, 5, today.atTime(19, 30), ReservationService.DURATION_MINUTES, ReservationStatus.BESTAETIGT, "");
+        add("Clara Schmid", "+43 676 9990011", 3, 8, today.atTime(20, 0), ReservationService.DURATION_MINUTES, ReservationStatus.BESTAETIGT, "");
 
         // Nächste sieben Tage
         String[] times = {"12:00", "12:30", "13:00", "18:00", "18:30", "19:00", "19:30", "20:00"};
@@ -180,8 +180,8 @@ public class DemoData {
                 for (int attempt = 0; attempt < 30; attempt++) {
                     int table = 1 + random.nextInt(settings.getTableCount());
                     if (settings.getCapacity(table) >= persons
-                            && ReservationService.isTableAvailable(table, start, 90, null)) {
-                        add(name, phone, persons, table, start, 90, ReservationStatus.BESTAETIGT, "");
+                            && ReservationService.isTableAvailable(table, start, ReservationService.DURATION_MINUTES, null)) {
+                        add(name, phone, persons, table, start, ReservationService.DURATION_MINUTES, ReservationStatus.BESTAETIGT, "");
                         break;
                     }
                 }

@@ -16,7 +16,6 @@ public class RestaurantSettings {
     private LocalTime openingTime = LocalTime.of(8, 0);
     private LocalTime closingTime = LocalTime.of(23, 0);
     private int delayMinutes = 20;
-    private int defaultReservationMinutes = 90;
     private int lowStockPercent = 100;
 
     private RestaurantSettings() {
@@ -29,7 +28,7 @@ public class RestaurantSettings {
     /** Übernimmt alle Werte auf einmal, nachdem sie geprüft wurden. */
     public void update(String name, List<Integer> tableCapacities,
                        LocalTime openingTime, LocalTime closingTime,
-                       int delayMinutes, int defaultReservationMinutes, int lowStockPercent) {
+                       int delayMinutes, int lowStockPercent) {
 
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Bitte einen Restaurantnamen eingeben.");
@@ -45,7 +44,10 @@ public class RestaurantSettings {
         if (!openingTime.isBefore(closingTime)) {
             throw new IllegalArgumentException("Die Öffnungszeit muss vor der Schließzeit liegen.");
         }
-        if (delayMinutes < 1 || defaultReservationMinutes < 15) {
+        if (closingTime.getHour() - openingTime.getHour() < 2) {
+            throw new IllegalArgumentException("Das Restaurant muss mindestens 2 Stunden offen haben.");
+        }
+        if (delayMinutes < 1) {
             throw new IllegalArgumentException("Bitte gültige Minutenwerte eingeben.");
         }
         if (lowStockPercent < 50 || lowStockPercent > 300) {
@@ -57,7 +59,6 @@ public class RestaurantSettings {
         this.openingTime = openingTime;
         this.closingTime = closingTime;
         this.delayMinutes = delayMinutes;
-        this.defaultReservationMinutes = defaultReservationMinutes;
         this.lowStockPercent = lowStockPercent;
     }
 
@@ -83,7 +84,6 @@ public class RestaurantSettings {
     /** Ab so vielen Minuten gilt eine offene Bestellung als verzögert. */
     public int getDelayMinutes() { return delayMinutes; }
 
-    public int getDefaultReservationMinutes() { return defaultReservationMinutes; }
 
     /** Warnung, sobald der Bestand bei diesem Prozentsatz des Mindestbestands oder darunter liegt. */
     public int getLowStockPercent() { return lowStockPercent; }

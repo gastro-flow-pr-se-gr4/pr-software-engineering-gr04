@@ -56,7 +56,9 @@ public final class ReservationDialog {
         DatePicker date = new DatePicker(existing == null ? suggestedDate : existing.getStart().toLocalDate());
 
         ComboBox<String> time = new ComboBox<>();
-        for (LocalTime t = settings.getOpeningTime(); t.isBefore(settings.getClosingTime()); t = t.plusMinutes(15)) {
+        // muss vor schließzeit fertig sein
+        LocalTime lastStart = settings.getClosingTime().minusMinutes(ReservationService.DURATION_MINUTES);
+        for (LocalTime t = settings.getOpeningTime(); !t.isAfter(lastStart); t = t.plusMinutes(15)) {
             time.getItems().add(t.format(Ui.TIME));
         }
         String startText = existing != null
@@ -67,8 +69,7 @@ public final class ReservationDialog {
         }
         time.setValue(startText);
 
-        Spinner<Integer> duration = new Spinner<>(30, 300,
-                existing == null ? settings.getDefaultReservationMinutes() : existing.getDurationMinutes(), 15);
+        int duration = ReservationService.DURATION_MINUTES;
         Spinner<Integer> persons = new Spinner<>(1, 30, existing == null ? 2 : existing.getPersons());
 
         ComboBox<Integer> table = new ComboBox<>();
@@ -102,12 +103,12 @@ public final class ReservationDialog {
             }
             int capacity = settings.getCapacity(table.getValue());
             seats.setText(capacity + " Plätze");
-            List<Integer> free = ReservationService.getFreeTables(start, duration.getValue(), persons.getValue(), existing);
+            List<Integer> free = ReservationService.getFreeTables(start, duration, persons.getValue(), existing);
             String freeText = free.isEmpty() ? "Zu dieser Zeit ist kein passender Tisch frei."
                     : "Passende freie Tische: " + join(free);
 
             Optional<Reservation> conflict = ReservationService.findConflict(
-                    table.getValue(), start, duration.getValue(), existing);
+                    table.getValue(), start, duration, existing);
             if (persons.getValue() > capacity) {
                 availability.setText("✗ Tisch " + table.getValue() + " hat nur " + capacity + " Plätze. " + freeText);
                 availability.getStyleClass().setAll("label", "error-text");
@@ -123,23 +124,19 @@ public final class ReservationDialog {
         };
         date.valueProperty().addListener((obs, oldValue, newValue) -> check.run());
         time.valueProperty().addListener((obs, oldValue, newValue) -> check.run());
-        duration.valueProperty().addListener((obs, oldValue, newValue) -> check.run());
         persons.valueProperty().addListener((obs, oldValue, newValue) -> check.run());
         table.valueProperty().addListener((obs, oldValue, newValue) -> check.run());
         check.run();
 
-        GridPane form = new GridPane();
-        form.setHgap(14);
-        form.setVgap(12);
+        GridPane form = Ui.form(14, 12);
         form.addRow(0, new Label("Gastname"), name);
         form.addRow(1, new Label("Telefonnummer"), phone);
         form.addRow(2, new Label("Datum"), date);
         form.addRow(3, new Label("Uhrzeit"), time);
         form.addRow(4, new Label("Personen"), persons);
         form.addRow(5, new Label("Tisch"), new HBox(10, table, seats));
-        form.addRow(6, new Label("Aufenthalt (Minuten)"), duration);
-        form.addRow(7, new Label("Status"), status);
-        form.addRow(8, new Label("Notizen"), note);
+        form.addRow(6, new Label("Status"), status);
+        form.addRow(7, new Label("Notizen"), note);
 
         VBox content = new VBox(14, form, availability, error);
         content.setPrefWidth(500);
@@ -152,10 +149,10 @@ public final class ReservationDialog {
                 LocalDateTime start = startOf(date, time);
                 if (existing == null) {
                     ReservationService.add(name.getText(), phone.getText(), persons.getValue(), table.getValue(),
-                            start, duration.getValue(), status.getValue(), note.getText());
+                            start, duration, status.getValue(), note.getText());
                 } else {
                     ReservationService.update(existing, name.getText(), phone.getText(), persons.getValue(),
-                            table.getValue(), start, duration.getValue(), status.getValue(), note.getText());
+                            table.getValue(), start, duration, status.getValue(), note.getText());
                 }
             } catch (IllegalArgumentException e) {
                 error.setText(e.getMessage());

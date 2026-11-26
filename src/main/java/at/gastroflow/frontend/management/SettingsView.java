@@ -45,7 +45,6 @@ public class SettingsView {
         ComboBox<String> opening = hourBox(settings.getOpeningTime(), 0, 22);
         ComboBox<String> closing = hourBox(settings.getClosingTime(), 1, 23);
         Spinner<Integer> delay = new Spinner<>(5, 120, settings.getDelayMinutes(), 5);
-        Spinner<Integer> duration = new Spinner<>(30, 300, settings.getDefaultReservationMinutes(), 15);
         Spinner<Integer> lowStock = new Spinner<>(50, 300, settings.getLowStockPercent(), 10);
 
         // Tische und Plätze pro Tisch
@@ -70,19 +69,14 @@ public class SettingsView {
         message.setWrapText(true);
         message.managedProperty().bind(message.textProperty().isNotEmpty());
 
-        GridPane form = new GridPane();
-        form.setHgap(18);
-        form.setVgap(14);
+        GridPane form = Ui.form(18, 14);
         form.addRow(0, label("Restaurantname"), name);
         form.addRow(1, label("Öffnet um"), opening);
         form.addRow(2, label("Schließt um"), closing);
-        form.addRow(3, label("Standard-Reservierungsdauer (Minuten)"), duration);
-        form.addRow(4, label("Bestellung verzögert ab (Minuten)"), delay);
-        form.addRow(5, label("Lagerwarnung ab (% des Mindestbestands)"), lowStock);
+        form.addRow(3, label("Bestellung verzögert ab (Minuten)"), delay);
+        form.addRow(4, label("Lagerwarnung ab (% des Mindestbestands)"), lowStock);
 
-        GridPane tables = new GridPane();
-        tables.setHgap(18);
-        tables.setVgap(14);
+        GridPane tables = Ui.form(18, 14);
         tables.addRow(0, label("Anzahl Tische"), tableCount);
 
         content.getChildren().setAll(
@@ -93,7 +87,7 @@ public class SettingsView {
                 Ui.panel("Tische und Kapazitäten", tables,
                         Ui.muted("Plätze pro Tisch – wird beim Reservieren geprüft."), capacities),
                 Ui.panel(null, message,
-                        Ui.primary("Einstellungen speichern", () -> save(name, opening, closing, delay, duration, lowStock, message))),
+                        Ui.primary("Einstellungen speichern", () -> save(name, opening, closing, delay, lowStock, message))),
                 Ui.panel("Hinweis zu den Daten",
                         Ui.muted("Es gibt noch keine Datenbank. Lagerbestände, Lagerhistorie und Rezepturen werden dauerhaft "
                                 + "gespeichert in " + InventoryService.getStorageFile() + ". Speisekarte, Reservierungen, "
@@ -113,7 +107,7 @@ public class SettingsView {
     }
 
     private void save(TextField name, ComboBox<String> opening, ComboBox<String> closing,
-                      Spinner<Integer> delay, Spinner<Integer> duration, Spinner<Integer> lowStock, Label message) {
+                      Spinner<Integer> delay, Spinner<Integer> lowStock, Label message) {
         try {
             List<Integer> capacities = capacitySpinners.stream().map(Spinner::getValue).toList();
 
@@ -145,7 +139,7 @@ public class SettingsView {
 
             RestaurantSettings.get().update(name.getText(), capacities,
                     Ui.parseTime(opening.getValue()), Ui.parseTime(closing.getValue()),
-                    delay.getValue(), duration.getValue(), lowStock.getValue());
+                    delay.getValue(), lowStock.getValue());
             onSaved.run();
             render();
             Ui.info("Einstellungen gespeichert.");

@@ -17,6 +17,9 @@ import java.util.Optional;
 /** Reservierungen inklusive Prüfung, ob ein Tisch frei ist und genug Plätze hat (nur im Speicher). */
 public class ReservationService {
 
+    // reservierung immer 2h
+    public static final int DURATION_MINUTES = 120;
+
     private static final List<Reservation> RESERVATIONS = new ArrayList<>();
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm");
     private static int nextId = 1;
