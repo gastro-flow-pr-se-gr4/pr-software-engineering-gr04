@@ -1,6 +1,7 @@
 package at.gastroflow.backend.dao;
 
 import at.gastroflow.backend.database.DatabaseConnection;
+import at.gastroflow.backend.model.Course;
 import at.gastroflow.backend.model.Order;
 import at.gastroflow.backend.model.OrderItem;
 import at.gastroflow.backend.model.OrderStatus;
@@ -27,7 +28,7 @@ import java.util.UUID;
 public class OrderDAO {
 
     private static final String SELECT_ORDERS =
-            "SELECT id, number, table_number, waiter, created_at, guests, status, paid_at FROM orders";
+            "SELECT id, number, table_number, waiter, created_at, guests, status, paid_at, course, kitchen_closed, submission_id FROM orders";
 
     /** Legt die Tabellen an, falls sie noch fehlen (Skript db/orders.sql). */
     public void createTables() throws SQLException {
@@ -74,49 +75,86 @@ public class OrderDAO {
         return orders.isEmpty() ? null : orders.get(0);
     }
 
-    /** Speichert Bestellung und Positionen in einem Schritt (alles oder nichts) und setzt die Nummer. */
-    public void save(Order order) throws SQLException {
-        String orderSql = "INSERT INTO orders (id, table_number, waiter, created_at, guests, status, paid_at)"
-                + " VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING number";
-        String itemSql = "INSERT INTO order_items (id, order_id, position, product_name, category, unit_price, quantity, note)"
-                + " VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-
+    /** Speichert mehrere Bestellungen (z. B. die Gänge eines Absendens) – alle oder keine. */
+    public void saveAll(List<Order> orders) throws SQLException {
         try (Connection connection = DatabaseConnection.getConnection()) {
             connection.setAutoCommit(false);
-            try (PreparedStatement insertOrder = connection.prepareStatement(orderSql);
-                 PreparedStatement insertItem = connection.prepareStatement(itemSql)) {
-
-                insertOrder.setObject(1, order.getId());
-                insertOrder.setInt(2, order.getTableNumber());
-                insertOrder.setString(3, order.getWaiter());
-                insertOrder.setTimestamp(4, Timestamp.valueOf(order.getCreatedAt()));
-                insertOrder.setInt(5, order.getGuests());
-                insertOrder.setString(6, order.getStatus().name());
-                insertOrder.setTimestamp(7, order.getPaidAt() == null ? null : Timestamp.valueOf(order.getPaidAt()));
-                try (ResultSet result = insertOrder.executeQuery()) {
-                    result.next();
-                    order.setNumber(result.getInt("number"));
+            try {
+                for (Order order : orders) {
+                    insert(connection, order);
                 }
-
-                int position = 0;
-                for (OrderItem item : order.getItems()) {
-                    insertItem.setObject(1, item.getId());
-                    insertItem.setObject(2, order.getId());
-                    insertItem.setInt(3, position++);
-                    insertItem.setString(4, item.getProductName());
-                    insertItem.setString(5, item.getCategory());
-                    insertItem.setBigDecimal(6, item.getUnitPrice());
-                    insertItem.setInt(7, item.getQuantity());
-                    insertItem.setString(8, item.getNote());
-                    insertItem.addBatch();
-                }
-                insertItem.executeBatch();
                 connection.commit();
             } catch (SQLException e) {
                 connection.rollback();
-                order.setNumber(0);
+                orders.forEach(order -> order.setNumber(0));
                 throw e;
             }
+        }
+    }
+
+    /** Wurde mit dieser Absende-id schon etwas gespeichert? */
+    public boolean existsSubmission(UUID submissionId) throws SQLException {
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement("SELECT 1 FROM orders WHERE submission_id = ?")) {
+            statement.setObject(1, submissionId);
+            try (ResultSet result = statement.executeQuery()) {
+                return result.next();
+            }
+        }
+    }
+
+    /** Die Küche hat diese Bestellungen abgeschlossen. */
+    public void closeKitchen(List<UUID> ids) throws SQLException {
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(
+                     "UPDATE orders SET kitchen_closed = TRUE WHERE id = ANY (?)")) {
+            statement.setArray(1, connection.createArrayOf("uuid", ids.toArray()));
+            statement.executeUpdate();
+        }
+    }
+
+    /** Speichert Bestellung und Positionen in einem Schritt (alles oder nichts) und setzt die Nummer. */
+    public void save(Order order) throws SQLException {
+        saveAll(List.of(order));
+    }
+
+    private void insert(Connection connection, Order order) throws SQLException {
+        String orderSql = "INSERT INTO orders (id, table_number, waiter, created_at, guests, status, paid_at,"
+                + " course, kitchen_closed, submission_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING number";
+        String itemSql = "INSERT INTO order_items (id, order_id, position, product_name, category, unit_price, quantity, note)"
+                + " VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
+        try (PreparedStatement insertOrder = connection.prepareStatement(orderSql);
+             PreparedStatement insertItem = connection.prepareStatement(itemSql)) {
+
+            insertOrder.setObject(1, order.getId());
+            insertOrder.setInt(2, order.getTableNumber());
+            insertOrder.setString(3, order.getWaiter());
+            insertOrder.setTimestamp(4, Timestamp.valueOf(order.getCreatedAt()));
+            insertOrder.setInt(5, order.getGuests());
+            insertOrder.setString(6, order.getStatus().name());
+            insertOrder.setTimestamp(7, order.getPaidAt() == null ? null : Timestamp.valueOf(order.getPaidAt()));
+            insertOrder.setString(8, order.getCourse().name());
+            insertOrder.setBoolean(9, order.isKitchenClosed());
+            insertOrder.setObject(10, order.getSubmissionId());
+            try (ResultSet result = insertOrder.executeQuery()) {
+                result.next();
+                order.setNumber(result.getInt("number"));
+            }
+
+            int position = 0;
+            for (OrderItem item : order.getItems()) {
+                insertItem.setObject(1, item.getId());
+                insertItem.setObject(2, order.getId());
+                insertItem.setInt(3, position++);
+                insertItem.setString(4, item.getProductName());
+                insertItem.setString(5, item.getCategory());
+                insertItem.setBigDecimal(6, item.getUnitPrice());
+                insertItem.setInt(7, item.getQuantity());
+                insertItem.setString(8, item.getNote());
+                insertItem.addBatch();
+            }
+            insertItem.executeBatch();
         }
     }
 
@@ -156,6 +194,9 @@ public class OrderDAO {
                     while (result.next()) {
                         Timestamp paid = result.getTimestamp("paid_at");
                         rows.put(result.getObject("id", UUID.class), new Object[]{
+                                Course.valueOf(result.getString("course")),
+                                result.getBoolean("kitchen_closed"),
+                                result.getObject("submission_id", UUID.class),
                                 result.getInt("number"),
                                 result.getInt("table_number"),
                                 result.getString("waiter"),
@@ -190,9 +231,15 @@ public class OrderDAO {
             }
 
             List<Order> orders = new ArrayList<>();
-            rows.forEach((id, row) -> orders.add(new Order(id, (int) row[0], (int) row[1], (String) row[2],
-                    (LocalDateTime) row[3], (int) row[4], items.getOrDefault(id, List.of()),
-                    (OrderStatus) row[5], (LocalDateTime) row[6])));
+            rows.forEach((id, row) -> {
+                Order order = new Order(id, (int) row[3], (int) row[4], (String) row[5],
+                        (LocalDateTime) row[6], (int) row[7], items.getOrDefault(id, List.of()),
+                        (OrderStatus) row[8], (LocalDateTime) row[9]);
+                order.setCourse((Course) row[0]);
+                order.setKitchenClosed((boolean) row[1]);
+                order.setSubmissionId((UUID) row[2]);
+                orders.add(order);
+            });
             return orders;
         }
     }

@@ -1,6 +1,8 @@
 package at.gastroflow.frontend.management;
 
 import at.gastroflow.backend.demo.model.Ingredient;
+import at.gastroflow.backend.model.Course;
+import at.gastroflow.frontend.api.OrderClient;
 import at.gastroflow.backend.demo.model.Product;
 import at.gastroflow.backend.demo.model.RecipeItem;
 import at.gastroflow.backend.demo.model.Unit;
@@ -12,6 +14,7 @@ import javafx.scene.Node;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
@@ -30,6 +33,7 @@ import javafx.stage.FileChooser;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /** Speisekartenverwaltung: Kategorien, Produkte, Rezepturen und mögliche Portionen. */
@@ -57,7 +61,15 @@ public class MenuView {
 
     // ---------- Kategorien ----------
 
+    // Gang pro Kategorie (gespeichert im Backend); leer, wenn das Backend nicht erreichbar ist
+    private Map<String, Course> courses = Map.of();
+
     private VBox categoriesPanel() {
+        try {
+            courses = OrderClient.courses(MenuService.getCategories());
+        } catch (IllegalStateException e) {
+            courses = Map.of();
+        }
         VBox list = new VBox(4);
         list.getChildren().add(categoryRow(null, "Alle Produkte", MenuService.getProducts().size()));
         for (String category : MenuService.getCategories()) {
@@ -88,7 +100,10 @@ public class MenuView {
         });
 
         if (category != null) {
+            // Gang der Kategorie: entscheidet, ob und wann die Küche die Produkte kocht
+            Course course = courses.get(category);
             row.getChildren().addAll(
+                    Ui.small(course == null ? "Gang ?" : course.toString(), () -> changeCourse(category)),
                     Ui.small("✎", () -> renameCategory(category)),
                     Ui.small("✕", () -> deleteCategory(category)));
         }
@@ -98,18 +113,54 @@ public class MenuView {
     private void addCategory() {
         askText("Kategorie hinzufügen", "Name der neuen Kategorie:", "").ifPresent(name -> {
             try {
+                if (name.isBlank()) {
+                    throw new IllegalArgumentException("Bitte einen Namen für die Kategorie eingeben.");
+                }
+                Course suggestion = OrderClient.courses(List.of(name.trim())).getOrDefault(name.trim(), Course.HAUPTSPEISE);
+                Optional<Course> course = askCourse("Kategorie hinzufügen", name.trim(), suggestion);
+                if (course.isEmpty()) {
+                    return;
+                }
                 MenuService.addCategory(name);
+                OrderClient.setCourse(name.trim(), course.get());
                 render();
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException | IllegalStateException e) {
+                Ui.error(e.getMessage());
+                render();
+            }
+        });
+    }
+
+    private void changeCourse(String category) {
+        askCourse("Gang ändern", category, courses.getOrDefault(category, Course.HAUPTSPEISE)).ifPresent(course -> {
+            try {
+                OrderClient.setCourse(category, course);
+                render();
+            } catch (IllegalStateException e) {
                 Ui.error(e.getMessage());
             }
         });
+    }
+
+    // Getränke gehen nicht in die Küche; die anderen Gänge kocht die Küche nacheinander
+    private Optional<Course> askCourse(String title, String category, Course current) {
+        ChoiceDialog<Course> dialog = new ChoiceDialog<>(current, Course.values());
+        dialog.setTitle(title);
+        dialog.setHeaderText("Zu welchem Gang gehört „" + category + "“?");
+        dialog.setContentText("Gang:");
+        Ui.styleDialog(dialog);
+        return dialog.showAndWait();
     }
 
     private void renameCategory(String category) {
         askText("Kategorie umbenennen", "Neuer Name für „" + category + "“:", category).ifPresent(name -> {
             try {
                 MenuService.renameCategory(category, name);
+                try {
+                    OrderClient.renameCategory(category, name.trim()); // der Gang bleibt erhalten
+                } catch (IllegalStateException e) {
+                    Ui.error("Umbenannt, aber der Gang konnte nicht übernommen werden: " + e.getMessage());
+                }
                 if (category.equals(selectedCategory)) {
                     selectedCategory = name.trim();
                 }

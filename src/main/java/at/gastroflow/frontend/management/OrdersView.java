@@ -129,7 +129,7 @@ public class OrdersView {
         }
 
         // Produkte + interne Lager-Hinweise
-        Label items = new Label(order.getItemsText());
+        Label items = new Label(order.course() + ": " + order.getItemsText());
         items.setWrapText(true);
         VBox productBox = new VBox(3, items);
         if (order.isOpen()) {
@@ -263,7 +263,7 @@ public class OrdersView {
         try {
             order = OrderClient.create(new CreateOrderRequest(UUID.randomUUID(), table.getValue(), "Leitung (Test)",
                     quantity.getValue(), List.of(new OrderItemDTO(chosen.getName(), chosen.getCategory(),
-                            BigDecimal.valueOf(chosen.getPrice()), quantity.getValue(), ""))));
+                            BigDecimal.valueOf(chosen.getPrice()), quantity.getValue(), "")))).get(0);
         } catch (ApiException e) {
             Ui.error(e.getMessage());
             return;

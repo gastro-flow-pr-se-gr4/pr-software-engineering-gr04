@@ -659,7 +659,7 @@ public class ServiceController {
 
     private VBox billOrder(OrderDTO order) {
 
-        Label title = new Label("Bestellung #" + order.number()
+        Label title = new Label(order.course() + " · #" + order.number()
                 + " · " + order.createdAt().format(TIME_FORMAT) + " Uhr");
         title.getStyleClass().add("res-name");
 
@@ -667,8 +667,10 @@ public class ServiceController {
         HBox.setHgrow(space, Priority.ALWAYS);
 
         // abgeschlossen heißt hier: serviert, aber noch nicht bezahlt
-        String status = order.status() == OrderStatus.ABGESCHLOSSEN
-                ? "Serviert" : order.status().toString();
+        // Getränke kommen nicht aus der Küche: "Zu bringen" statt "Neu"
+        String status = order.status() == OrderStatus.ABGESCHLOSSEN ? "Serviert"
+                : !order.isKitchenOrder() && order.status() == OrderStatus.NEU ? "Zu bringen"
+                : order.status().toString();
 
         HBox heading = new HBox(10, title, space);
         heading.setAlignment(Pos.CENTER_LEFT);
@@ -698,7 +700,7 @@ public class ServiceController {
             box.getChildren().add(note);
         }
 
-        if (order.status() == OrderStatus.FERTIG) {
+        if (order.canServe()) {
             box.getChildren().add(actionButton("Serviert", () -> {
                 try {
                     OrderClient.changeStatus(order.id(), OrderStatus.ABGESCHLOSSEN);
@@ -739,18 +741,18 @@ public class ServiceController {
             return;
         }
 
-        // Über die REST-API anlegen; die id des Entwurfs verhindert doppeltes Speichern
-        OrderDTO order;
+        // Über die REST-API anlegen (eine Bestellung pro Gang); die id des Entwurfs verhindert doppeltes Speichern
+        List<OrderDTO> orders;
         try {
-            order = OrderClient.create(draft.toRequest("Service"));
+            orders = OrderClient.create(draft.toRequest("Service"));
         } catch (ApiException e) {
             showSendError(e.getMessage());
             return;
         }
         draft.markSent();
 
-        // Zutaten automatisch vom Lager abbuchen (Lager liegt noch in der Demo)
-        InventoryBridge.book(order);
+        // Zutaten automatisch vom Lager abbuchen
+        orders.forEach(InventoryBridge::book);
 
         // Entwurf leeren, bevor die Bestätigung erscheint – so ist kein zweites Absenden möglich
         DRAFTS.remove(selectedTable);
@@ -758,13 +760,30 @@ public class ServiceController {
         showTables();
         refresh();
 
-        String confirmation = "Bestellung #" + order.number() + " für Tisch " + order.table()
-                + " wurde an die Küche gesendet.\n\n"
-                + draft.getItemCount() + " Artikel · " + formatPrice(order.total());
+        String kitchen = orders.stream().filter(OrderDTO::isKitchenOrder)
+                .map(order -> order.course().toString())
+                .collect(java.util.stream.Collectors.joining(", "));
+        boolean drinks = orders.stream().anyMatch(order -> !order.isKitchenOrder());
+        BigDecimal total = orders.stream().map(OrderDTO::total).reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        InventoryBridge.problemFor(order).ifPresentOrElse(
-                stockProblem -> warning(confirmation + "\n\nHinweis Lager: " + stockProblem),
-                () -> info(confirmation));
+        StringBuilder confirmation = new StringBuilder("Bestellung für Tisch " + draft.getTable() + " wurde abgeschickt.\n");
+        if (!kitchen.isEmpty()) {
+            confirmation.append("\nAn die Küche: ").append(kitchen);
+        }
+        if (drinks) {
+            confirmation.append("\nGetränke: bitte direkt bringen und als serviert markieren");
+        }
+        confirmation.append("\n\n").append(draft.getItemCount()).append(" Artikel · ").append(formatPrice(total));
+
+        String problems = orders.stream()
+                .map(order -> InventoryBridge.problemFor(order).orElse(""))
+                .filter(stockProblem -> !stockProblem.isBlank())
+                .collect(java.util.stream.Collectors.joining("\n"));
+        if (problems.isEmpty()) {
+            info(confirmation.toString());
+        } else {
+            warning(confirmation + "\n\nHinweis Lager: " + problems);
+        }
     }
 
     // Gibt es den Tisch noch und sind alle Produkte verfügbar? (null = alles in Ordnung)

@@ -41,11 +41,11 @@
                         <Label text="Küchenübersicht"
                                styleClass="page-title"/>
 
-                        <Label text="Alle aktuellen Bestellungen im Überblick"
+                        <Label text="Eine Karte pro Tisch, Gang für Gang. Getränke bringt der Service."
                                styleClass="page-subtitle"/>
                     </VBox>
 
-                    <!-- Drei Spalten nach Status -->
+                    <!-- Drei Spalten nach Status, eine Karte pro Tisch -->
                     <HBox spacing="20" alignment="TOP_LEFT">
 
                         <!-- Neu -->
@@ -103,7 +103,7 @@
                                 <Label fx:id="finishedCount"
                                        text="0"
                                        styleClass="stat-number"/>
-                                <Label text="Bereit zur Abholung"
+                                <Label text="Bereit zur Abholung oder nächster Gang"
                                        wrapText="true"
                                        styleClass="stat-description"/>
                             </VBox>

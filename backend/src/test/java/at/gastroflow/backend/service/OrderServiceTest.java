@@ -30,15 +30,18 @@ class OrderServiceTest {
     @BeforeEach
     void setUp() {
         dao = new InMemoryOrderDAO();
-        service = new OrderService(dao);
+        service = new OrderService(dao, new CourseService(new InMemoryCourseDAO()));
     }
 
+    // Kategorie "Test" zählt als Hauptspeise, damit eine Anfrage genau eine Bestellung ergibt
     private static OrderItemDTO item(String name, String price, int quantity, String note) {
         return new OrderItemDTO(name, "Test", new BigDecimal(price), quantity, note);
     }
 
     private Order send(int table, OrderItemDTO... items) throws SQLException {
-        return service.createOrder(new CreateOrderRequest(UUID.randomUUID(), table, "Service", 1, List.of(items)));
+        List<Order> orders = service.createOrder(new CreateOrderRequest(UUID.randomUUID(), table, "Service", 1, List.of(items)));
+        assertEquals(1, orders.size(), "Testhilfe nur für Produkte eines Gangs");
+        return orders.get(0);
     }
 
     // ---------- Absenden (#19) und Gesamtpreis (#41) ----------
