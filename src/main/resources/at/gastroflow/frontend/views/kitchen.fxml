@@ -45,73 +45,73 @@
                                styleClass="page-subtitle"/>
                     </VBox>
 
-                    <!-- Statusübersicht -->
-                    <FlowPane hgap="20"
-                              vgap="20"
-                              prefWrapLength="1050">
+                    <!-- Drei Spalten nach Status -->
+                    <HBox spacing="20" alignment="TOP_LEFT">
 
-                        <!-- Neue Bestellungen -->
-                        <VBox spacing="12"
+                        <!-- Neu -->
+                        <VBox spacing="16"
                               prefWidth="300"
-                              styleClass="stat-card">
+                              minWidth="0"
+                              maxWidth="Infinity"
+                              HBox.hgrow="ALWAYS">
 
-                            <Label text="NEUE BESTELLUNGEN"
-                                   styleClass="stat-title"/>
+                            <VBox spacing="6" styleClass="stat-card, column-new">
+                                <Label text="NEU"
+                                       styleClass="stat-title"/>
+                                <Label fx:id="newCount"
+                                       text="0"
+                                       styleClass="stat-number"/>
+                                <Label text="Warten auf Zubereitung"
+                                       wrapText="true"
+                                       styleClass="stat-description"/>
+                            </VBox>
 
-                            <Label fx:id="newCount"
-                                   text="0"
-                                   styleClass="stat-number"/>
-
-                            <Label text="Warten auf Zubereitung"
-                                   styleClass="stat-description"/>
+                            <VBox fx:id="newColumn" spacing="16"/>
                         </VBox>
 
                         <!-- In Zubereitung -->
-                        <VBox spacing="12"
+                        <VBox spacing="16"
                               prefWidth="300"
-                              styleClass="stat-card">
+                              minWidth="0"
+                              maxWidth="Infinity"
+                              HBox.hgrow="ALWAYS">
 
-                            <Label text="IN ZUBEREITUNG"
-                                   styleClass="stat-title"/>
+                            <VBox spacing="6" styleClass="stat-card, column-preparing">
+                                <Label text="IN ZUBEREITUNG"
+                                       styleClass="stat-title"/>
+                                <Label fx:id="preparingCount"
+                                       text="0"
+                                       styleClass="stat-number"/>
+                                <Label text="Werden gerade zubereitet"
+                                       wrapText="true"
+                                       styleClass="stat-description"/>
+                            </VBox>
 
-                            <Label fx:id="preparingCount"
-                                   text="0"
-                                   styleClass="stat-number"/>
-
-                            <Label text="Werden gerade zubereitet"
-                                   styleClass="stat-description"/>
+                            <VBox fx:id="preparingColumn" spacing="16"/>
                         </VBox>
 
-                        <!-- Fertige Bestellungen -->
-                        <VBox spacing="12"
+                        <!-- Fertig -->
+                        <VBox spacing="16"
                               prefWidth="300"
-                              styleClass="stat-card">
+                              minWidth="0"
+                              maxWidth="Infinity"
+                              HBox.hgrow="ALWAYS">
 
-                            <Label text="FERTIG"
-                                   styleClass="stat-title"/>
+                            <VBox spacing="6" styleClass="stat-card, column-finished">
+                                <Label text="FERTIG"
+                                       styleClass="stat-title"/>
+                                <Label fx:id="finishedCount"
+                                       text="0"
+                                       styleClass="stat-number"/>
+                                <Label text="Bereit zur Abholung"
+                                       wrapText="true"
+                                       styleClass="stat-description"/>
+                            </VBox>
 
-                            <Label fx:id="finishedCount"
-                                   text="0"
-                                   styleClass="stat-number"/>
-
-                            <Label text="Bereit zur Abholung"
-                                   styleClass="stat-description"/>
+                            <VBox fx:id="finishedColumn" spacing="16"/>
                         </VBox>
 
-                    </FlowPane>
-
-                    <!-- Bestellbereich -->
-                    <VBox spacing="18">
-
-                        <Label text="Aktuelle Bestellungen"
-                               styleClass="section-title"/>
-
-                        <FlowPane fx:id="ordersPane"
-                                  hgap="20"
-                                  vgap="20"
-                                  prefWrapLength="1050"/>
-
-                    </VBox>
+                    </HBox>
 
                 </VBox>
             </content>

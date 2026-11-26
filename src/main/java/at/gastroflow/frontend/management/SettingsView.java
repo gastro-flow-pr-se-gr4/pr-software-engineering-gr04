@@ -3,6 +3,7 @@ package at.gastroflow.frontend.management;
 import at.gastroflow.backend.demo.model.Reservation;
 import at.gastroflow.backend.demo.model.RestaurantSettings;
 import at.gastroflow.backend.demo.service.InventoryService;
+import at.gastroflow.backend.demo.service.OrderService;
 import at.gastroflow.backend.demo.service.ReservationService;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -126,6 +127,14 @@ public class SettingsView {
                 Reservation r = blocked.get();
                 throw new IllegalArgumentException("Tisch " + r.getTable() + " ist noch für " + r.getName() + " ("
                         + r.getPersons() + " Personen, " + r.getStart().format(Ui.DATE) + ") reserviert. Bitte zuerst umbuchen.");
+            }
+
+            // Kein Tisch mit laufender Bestellung darf verschwinden, sonst kann er nicht abkassiert werden
+            for (int table = capacities.size() + 1; table <= RestaurantSettings.get().getTableCount(); table++) {
+                if (OrderService.isTableOccupied(table)) {
+                    throw new IllegalArgumentException("Tisch " + table
+                            + " hat noch laufende Bestellungen. Bitte zuerst servieren und abkassieren.");
+                }
             }
 
             RestaurantSettings.get().update(name.getText(), capacities,

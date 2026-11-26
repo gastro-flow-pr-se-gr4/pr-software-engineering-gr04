@@ -46,68 +46,114 @@
                           prefWrapLength="1100"
                           styleClass="content-layout">
 
-                    <!-- AKTUELLE BESTELLUNG -->
+                    <!-- LINKER BEREICH -->
                     <VBox fx:id="orderPanel"
                           minWidth="0"
                           prefWidth="520"
-                          spacing="22"
-                          styleClass="panel">
+                          spacing="22">
 
-                        <Label fx:id="currentTitle"
-                               text="Aktuelle Bestellung · Tisch 04"
-                               styleClass="panel-title"/>
+                        <!-- AKTUELLE BESTELLUNG -->
+                        <VBox spacing="22" styleClass="panel">
 
-                        <HBox spacing="12" styleClass="table-heading">
-                            <Label text="ANZ." minWidth="65"/>
-                            <Label text="ARTIKEL"
-                                   HBox.hgrow="ALWAYS"
-                                   maxWidth="Infinity"/>
-                            <Label text="SUMME"/>
-                        </HBox>
+                            <Label fx:id="currentTitle"
+                                   text="Aktuelle Bestellung · Tisch 04"
+                                   styleClass="panel-title"/>
 
-                        <VBox fx:id="currentItems"
-                              spacing="0"
-                              minHeight="0"/>
+                            <HBox spacing="12" styleClass="table-heading">
+                                <Label text="ANZ." minWidth="65"/>
+                                <Label text="ARTIKEL"
+                                       HBox.hgrow="ALWAYS"
+                                       maxWidth="Infinity"/>
+                                <Label text="SUMME"/>
+                            </HBox>
 
-                        <VBox spacing="10">
-                            <Label text="SONDERWUNSCH"
-                                   styleClass="section-label"/>
+                            <VBox fx:id="currentItems"
+                                  spacing="0"
+                                  minHeight="0"/>
 
-                            <TextArea fx:id="noteArea"
-                                      promptText="z. B. Burger 1 ohne Zwiebeln"
-                                      prefRowCount="3"
-                                      wrapText="true"
-                                      styleClass="note-area"/>
+                            <VBox spacing="10">
+                                <HBox spacing="8" alignment="CENTER_LEFT">
+                                    <Label text="SONDERWUNSCH"
+                                           styleClass="section-label"/>
+                                    <Label fx:id="noteTarget"
+                                           styleClass="muted"/>
+                                </HBox>
 
-                            <Label fx:id="counterLabel"
-                                   text="0/120"
-                                   styleClass="counter"
+                                <TextArea fx:id="noteArea"
+                                          promptText="z. B. Burger 1 ohne Zwiebeln"
+                                          prefRowCount="3"
+                                          wrapText="true"
+                                          styleClass="note-area"/>
+
+                                <Label fx:id="counterLabel"
+                                       text="0/120"
+                                       styleClass="counter"
+                                       maxWidth="Infinity"
+                                       alignment="CENTER_RIGHT"/>
+                            </VBox>
+
+                            <Separator/>
+
+                            <HBox alignment="CENTER_LEFT">
+                                <Label text="Gesamt"
+                                       styleClass="total-heading"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <Label fx:id="totalLabel"
+                                       text="0,00 €"
+                                       styleClass="total-amount"/>
+                            </HBox>
+
+                            <Label fx:id="sendError"
+                                   wrapText="true"
                                    maxWidth="Infinity"
-                                   alignment="CENTER_RIGHT"/>
+                                   visible="false"
+                                   managed="false"
+                                   styleClass="send-error"/>
+
+                            <HBox alignment="CENTER_RIGHT" spacing="12">
+                                <Button fx:id="discardButton"
+                                        text="Verwerfen"
+                                        onAction="#discard"
+                                        styleClass="secondary-button"/>
+
+                                <Button fx:id="sendButton"
+                                        text="An Küche senden"
+                                        onAction="#send"
+                                        styleClass="primary-button"/>
+                            </HBox>
+
                         </VBox>
 
-                        <Separator/>
+                        <!-- ABRECHNUNG -->
+                        <VBox spacing="18" styleClass="panel">
+                            <Label fx:id="paidTitle"
+                                   text="Tisch abrechnen · Tisch 04"
+                                   styleClass="panel-title"/>
 
-                        <HBox alignment="CENTER_LEFT">
-                            <Label text="Gesamt"
-                                   styleClass="total-heading"/>
-                            <Region HBox.hgrow="ALWAYS"/>
-                            <Label fx:id="totalLabel"
-                                   text="0,00 €"
-                                   styleClass="total-amount"/>
-                        </HBox>
+                            <VBox fx:id="paidItems"
+                                  spacing="0"
+                                  minHeight="90"/>
 
-                        <HBox alignment="CENTER_RIGHT" spacing="12">
-                            <Button fx:id="discardButton"
-                                    text="Verwerfen"
-                                    onAction="#discard"
-                                    styleClass="secondary-button"/>
+                            <Separator/>
 
-                            <Button fx:id="sendButton"
-                                    text="An Küche senden"
-                                    onAction="#send"
-                                    styleClass="primary-button"/>
-                        </HBox>
+                            <HBox alignment="CENTER_LEFT">
+                                <Label text="Zu zahlen"
+                                       styleClass="total-heading"/>
+
+                                <Region HBox.hgrow="ALWAYS"/>
+
+                                <Label fx:id="paidTotal"
+                                       text="0,00 €"
+                                       styleClass="total-amount"/>
+                            </HBox>
+
+                            <HBox alignment="CENTER_RIGHT">
+                                <Button fx:id="payButton"
+                                        text="Bezahlt · Tisch freigeben"
+                                        onAction="#pay"
+                                        styleClass="primary-button"/>
+                            </HBox>
+                        </VBox>
 
                     </VBox>
 
@@ -153,37 +199,6 @@
                                 <Label text="Reserviert" styleClass="legend-reserviert"/>
                                 <Label text="Besetzt" styleClass="legend-besetzt"/>
                                 <Label text="Ausgewählt" styleClass="legend-selected"/>
-                            </HBox>
-                        </VBox>
-
-                        <!-- ABRECHNUNG -->
-                        <VBox spacing="18" styleClass="panel">
-                            <Label fx:id="paidTitle"
-                                   text="Tisch abrechnen · Tisch 04"
-                                   styleClass="panel-title"/>
-
-                            <VBox fx:id="paidItems"
-                                  spacing="0"
-                                  minHeight="90"/>
-
-                            <Separator/>
-
-                            <HBox alignment="CENTER_LEFT">
-                                <Label text="Zu zahlen"
-                                       styleClass="total-heading"/>
-
-                                <Region HBox.hgrow="ALWAYS"/>
-
-                                <Label fx:id="paidTotal"
-                                       text="0,00 €"
-                                       styleClass="total-amount"/>
-                            </HBox>
-
-                            <HBox alignment="CENTER_RIGHT">
-                                <Button fx:id="payButton"
-                                        text="Bezahlt · Tisch freigeben"
-                                        onAction="#pay"
-                                        styleClass="primary-button"/>
                             </HBox>
                         </VBox>
 

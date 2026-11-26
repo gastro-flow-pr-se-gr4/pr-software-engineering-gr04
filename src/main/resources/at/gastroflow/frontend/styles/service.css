@@ -47,7 +47,7 @@
 }
 
 .table-heading {
-    -fx-padding: 12 0;
+    -fx-padding: 12 8;
     -fx-border-color: #d8dfe8;
     -fx-border-width: 0 0 1 0;
 }
@@ -278,6 +278,38 @@
     -fx-text-fill: #10243c;
     -fx-padding: 4 9;
     -fx-background-radius: 5;
+}
+
+/* Positionen der aktuellen Bestellung */
+
+.order-line {
+    -fx-padding: 13 8;
+    -fx-cursor: hand;
+}
+
+.selected-line {
+    -fx-background-color: #eef4fc;
+}
+
+.line-note {
+    -fx-font-size: 13px;
+    -fx-padding: 0 0 0 77;
+}
+
+.item-row .line-note {
+    -fx-text-fill: #62758d;
+}
+
+.remove-action {
+    -fx-background-color: #fde2e1;
+    -fx-text-fill: #b42318;
+}
+
+.send-error {
+    -fx-background-color: #fde2e1;
+    -fx-text-fill: #b42318;
+    -fx-background-radius: 8;
+    -fx-padding: 10 14;
 }
 
 /* Seiten-Tabs in der Kopfzeile */
