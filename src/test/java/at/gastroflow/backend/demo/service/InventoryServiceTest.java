@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Tests für Lagerbuchungen, Portionen, Status und Speicherung. */
 class InventoryServiceTest {
 
     @TempDir
@@ -32,7 +31,7 @@ class InventoryServiceTest {
     @BeforeEach
     void setUp() {
         file = tempDir.resolve("lager.txt");
-        InventoryService.init(file, false); // frische Beispieldaten, synchron speichern
+        InventoryService.init(file, false);
     }
 
     private Ingredient ingredient(String name) {
@@ -47,7 +46,6 @@ class InventoryServiceTest {
 
     @Test
     void orderDeductsRecipeIngredients() {
-        // Beispiel aus der Anforderung: 3 × Classic Burger
         OrderService.send(order("Classic Burger", 3, OrderStatus.NEU));
 
         assertEquals(12 - 3, ingredient("Burgerbrötchen").getStock());
@@ -101,7 +99,6 @@ class InventoryServiceTest {
 
     @Test
     void insufficientStockBooksNothingAndNeverGoesNegative() {
-        // 13 Burger, aber nur 12 Brötchen: es darf GAR NICHTS abgebucht werden
         Order order = order("Classic Burger", 13, OrderStatus.NEU);
         OrderService.send(order);
 
@@ -113,7 +110,6 @@ class InventoryServiceTest {
 
     @Test
     void portionsComeFromScarcestIngredient() {
-        // 12 Brötchen → höchstens 12 Classic Burger, obwohl Fleisch für 44 reichen würde
         assertEquals(12, InventoryService.portionsFor(MenuService.findByName("Classic Burger")));
 
         InventoryService.correct(ingredient("Burgerbrötchen"), 0, "Test");
@@ -122,7 +118,7 @@ class InventoryServiceTest {
 
     @Test
     void statusFollowsMinimumStock() {
-        Ingredient broetchen = ingredient("Burgerbrötchen"); // 12 Stk., Minimum 15
+        Ingredient broetchen = ingredient("Burgerbrötchen");
         assertEquals(StockStatus.NIEDRIG, InventoryService.statusOf(broetchen));
 
         InventoryService.receive(broetchen, 20, "Lieferung");
@@ -163,7 +159,6 @@ class InventoryServiceTest {
         InventoryService.receive(ingredient("Käse"), 2500, "Lieferung");
         InventoryService.addIngredient("Oliven", "Obst & Gemüse", Unit.KILOGRAMM, 1200, 500);
 
-        // Neu laden aus derselben Datei
         InventoryService.init(file, false);
 
         assertEquals(7500, ingredient("Käse").getStock());

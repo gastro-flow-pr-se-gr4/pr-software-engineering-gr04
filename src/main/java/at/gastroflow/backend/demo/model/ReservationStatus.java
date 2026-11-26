@@ -1,6 +1,5 @@
 package at.gastroflow.backend.demo.model;
 
-/** Gespeicherter Status einer Reservierung. */
 public enum ReservationStatus {
 
     BESTAETIGT("Bestätigt"),
@@ -14,7 +13,6 @@ public enum ReservationStatus {
         this.label = label;
     }
 
-    /** Nur bestätigte und anwesende Reservierungen belegen einen Tisch. */
     public boolean blocksTable() {
         return this == BESTAETIGT || this == ANWESEND;
     }

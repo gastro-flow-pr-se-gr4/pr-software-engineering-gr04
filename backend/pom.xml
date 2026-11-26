@@ -23,7 +23,6 @@
             <artifactId>postgresql</artifactId>
             <version>42.7.7</version>
         </dependency>
-        <!-- JSON für die REST-API -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>

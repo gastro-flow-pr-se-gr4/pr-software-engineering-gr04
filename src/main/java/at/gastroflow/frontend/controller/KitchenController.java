@@ -19,11 +19,6 @@ import at.gastroflow.backend.model.Course;
 import at.gastroflow.backend.model.OrderStatus;
 import at.gastroflow.frontend.api.OrderClient;
 
-/**
- * Küchenansicht: drei Spalten (Neu, In Zubereitung, Fertig) mit einer Karte pro Tisch.
- * Ein Tisch wird Gang für Gang gekocht: Vorspeise → Hauptspeise → Nachspeise.
- * Getränke erscheinen hier nicht, die bringt der Service. Die Daten kommen von der REST-API.
- */
 public class KitchenController {
 
     @FXML
@@ -50,7 +45,6 @@ public class KitchenController {
         showOrders();
     }
 
-    // Verteilt die Tische auf die drei Spalten (ältester Tisch zuerst)
     private void showOrders() {
 
         newColumn.getChildren().clear();
@@ -80,7 +74,6 @@ public class KitchenController {
         finish(finishedColumn, finishedCount, "Nichts zur Abholung bereit.");
     }
 
-    // Zähler setzen und leere Spalten mit Hinweis füllen
     private void finish(VBox column, Label counter, String emptyText) {
         counter.setText(String.valueOf(column.getChildren().size()));
         if (column.getChildren().isEmpty()) {
@@ -91,7 +84,6 @@ public class KitchenController {
         }
     }
 
-    // Neu: der erste bestellte Gang wartet auf den Start
     private VBox newCard(KitchenTableDTO table) {
         Course course = table.nextCourse();
         VBox card = card(table, course.toString());
@@ -101,7 +93,6 @@ public class KitchenController {
         return card;
     }
 
-    // In Zubereitung: der aktuelle Gang wird gekocht
     private VBox preparingCard(KitchenTableDTO table) {
         List<OrderDTO> preparing = withStatus(table, OrderStatus.IN_ZUBEREITUNG);
         VBox card = card(table, courseNames(preparing));
@@ -111,13 +102,11 @@ public class KitchenController {
         return card;
     }
 
-    // Fertig: Gang wartet auf den Service; kommt noch ein Gang, kann er gleich gestartet werden
     private VBox finishedCard(KitchenTableDTO table) {
         List<OrderDTO> ready = withStatus(table, OrderStatus.FERTIG);
 
         VBox card;
         if (ready.isEmpty()) {
-            // der letzte Gang ist schon serviert
             List<OrderDTO> served = withStatus(table, OrderStatus.ABGESCHLOSSEN);
             card = card(table, served.isEmpty() ? "" : served.get(served.size() - 1).course() + " serviert");
         } else {
@@ -136,10 +125,8 @@ public class KitchenController {
             preview.setWrapText(true);
             preview.setMinHeight(Region.USE_PREF_SIZE);
             card.getChildren().add(preview);
-            // "Weiter mit …" setzt den nächsten Gang direkt auf In Zubereitung
             card.getChildren().add(actionButton("Weiter mit " + course, () -> OrderClient.startNextCourse(table.table())));
         } else if (table.canClose()) {
-            // letzter Gang fertig: die Küche ist mit diesem Tisch durch
             Button close = actionButton("Abschließen", () -> OrderClient.closeKitchenTable(table.table()));
             close.getStyleClass().add("close-button");
             card.getChildren().add(close);
@@ -147,7 +134,6 @@ public class KitchenController {
         return card;
     }
 
-    // Grundgerüst einer Tischkarte
     private VBox card(KitchenTableDTO table, String courseText) {
         VBox card = new VBox(12);
         card.getStyleClass().add("order-card");
@@ -166,7 +152,6 @@ public class KitchenController {
         return card;
     }
 
-    // Alle bestellten Gänge klein nebeneinander, erledigte mit grünem Haken: "✓ Vorspeise  Hauptspeise"
     private FlowPane courseProgress(KitchenTableDTO table) {
         FlowPane row = new FlowPane(10, 4);
         for (KitchenTableDTO.CourseProgressDTO progress : table.courses()) {
@@ -177,7 +162,6 @@ public class KitchenController {
         return row;
     }
 
-    // Produkte (eine Zeile pro Position) und Sonderwünsche der Bestellungen
     private void addOrders(VBox card, List<OrderDTO> orders) {
         VBox items = new VBox(5);
         for (OrderDTO order : orders) {
@@ -204,7 +188,6 @@ public class KitchenController {
         }
     }
 
-    // Hinweis auf spätere Gänge, z. B. "Danach: Hauptspeise, Nachspeise"
     private void addLaterCourses(VBox card, KitchenTableDTO table, Course current) {
         String later = withStatus(table, OrderStatus.NEU).stream()
                 .map(OrderDTO::course)

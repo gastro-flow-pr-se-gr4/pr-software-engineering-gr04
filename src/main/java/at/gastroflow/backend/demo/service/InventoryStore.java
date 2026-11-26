@@ -21,16 +21,8 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/**
- * Speichert Zutaten, Lagerhistorie und Rezepturen dauerhaft in einer Textdatei,
- * solange GastroFlow noch keine Datenbank hat.
- * Geschrieben wird in eine temporäre Datei, die dann in einem Schritt ersetzt wird,
- * damit die Datei nie halb geschrieben ist. Das Schreiben läuft im Hintergrund,
- * damit die Oberfläche nicht hängt.
- */
 public final class InventoryStore {
 
-    /** Geladene Daten. Rezepturen sind nach Produktnamen abgelegt. */
     public record Data(int nextId, List<Ingredient> ingredients, List<StockMovement> movements,
                        Map<String, List<RecipeItem>> recipes) {
     }
@@ -59,7 +51,6 @@ public final class InventoryStore {
         return file;
     }
 
-    /** Lädt die Datei. Leer, wenn es sie noch nicht gibt oder sie defekt ist. */
     public Optional<Data> load() {
         if (!Files.exists(file)) {
             return Optional.empty();
@@ -67,12 +58,10 @@ public final class InventoryStore {
         try {
             return Optional.of(parse(Files.readAllLines(file, StandardCharsets.UTF_8)));
         } catch (IOException | RuntimeException e) {
-            // Defekte Datei zur Sicherheit aufheben, statt sie zu überschreiben
             try {
                 Files.move(file, file.resolveSibling(file.getFileName() + ".defekt"),
                         StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException ignored) {
-                // nichts weiter zu tun
             }
             System.err.println("Lagerdatei konnte nicht gelesen werden: " + e.getMessage());
             return Optional.empty();
@@ -101,8 +90,6 @@ public final class InventoryStore {
             System.err.println("Lager konnte nicht gespeichert werden: " + e.getMessage());
         }
     }
-
-    // ---------- Dateiformat (eine Zeile pro Eintrag, Felder mit Tabulator getrennt) ----------
 
     public static String serialize(int nextId, List<Ingredient> ingredients, List<StockMovement> movements,
                                    Map<String, List<RecipeItem>> recipes) {

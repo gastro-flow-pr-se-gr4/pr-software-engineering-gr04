@@ -13,7 +13,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Tests für Tischverfügbarkeit, Kapazität und Öffnungszeiten. Datum weit in der Zukunft, damit nichts kollidiert. */
 class ReservationServiceTest {
 
     private LocalDateTime at(int dayOffset, int hour, int minute) {
@@ -36,7 +35,6 @@ class ReservationServiceTest {
 
     @Test
     void tooManyPersonsForTableIsRejected() {
-        // Tisch 1 hat 4 Plätze
         assertThrows(IllegalArgumentException.class, () ->
                 ReservationService.add("Große Gruppe", "", 6, 1, at(3, 12, 0), 90, ReservationStatus.BESTAETIGT, ""));
     }
@@ -72,7 +70,6 @@ class ReservationServiceTest {
 
     @Test
     void freeTablesRespectCapacity() {
-        // Für 7 Personen kommen nur die 8er-Tische 11 und 12 in Frage
         assertEquals(java.util.List.of(11, 12),
                 ReservationService.getFreeTables(at(8, 12, 0), 90, 7, null));
     }

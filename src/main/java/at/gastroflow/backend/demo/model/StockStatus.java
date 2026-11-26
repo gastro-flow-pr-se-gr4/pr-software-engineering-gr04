@@ -1,6 +1,5 @@
 package at.gastroflow.backend.demo.model;
 
-/** Lagerstatus einer Zutat (Grün / Orange / Rot). */
 public enum StockStatus {
 
     AUSREICHEND("Ausreichend"),

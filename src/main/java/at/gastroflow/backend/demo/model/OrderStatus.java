@@ -1,6 +1,5 @@
 package at.gastroflow.backend.demo.model;
 
-/** Status einer Bestellung von der Aufnahme bis zum Abschluss. */
 public enum OrderStatus {
 
     NEU("Neu"),

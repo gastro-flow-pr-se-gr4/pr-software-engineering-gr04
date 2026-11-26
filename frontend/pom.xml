@@ -16,7 +16,6 @@
         <javafx.skip>false</javafx.skip>
     </properties>
 
-    <!-- Bestellungen laufen über die REST-API des echten Backends (#75) -->
     <dependencies>
         <dependency>
             <groupId>at.gastroflow</groupId>
@@ -25,7 +24,6 @@
         </dependency>
     </dependencies>
 
-    <!-- Der Code der JavaFX-App liegt im Ordner src des Hauptprojekts -->
     <build>
         <sourceDirectory>${project.basedir}/../src/main/java</sourceDirectory>
         <testSourceDirectory>${project.basedir}/../src/test/java</testSourceDirectory>

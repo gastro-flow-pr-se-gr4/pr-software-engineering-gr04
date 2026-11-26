@@ -19,7 +19,6 @@ import java.time.temporal.IsoFields;
 import java.util.List;
 import java.util.Locale;
 
-/** Kalender mit Tages-, Wochen- und Monatsansicht für Reservierungen. */
 public class CalendarView {
 
     private static final DateTimeFormatter LONG_DATE =
@@ -100,8 +99,6 @@ public class CalendarView {
         }
     }
 
-    // ---------- Tagesansicht ----------
-
     private Node dayView() {
         LocalDateTime now = LocalDateTime.now();
         List<Reservation> reservations = ReservationService.getReservationsOn(date);
@@ -139,8 +136,6 @@ public class CalendarView {
                         Ui.cell("TISCH", 70), Ui.cell("STATUS", 120), Ui.cell("", 170)),
                 rows);
     }
-
-    // ---------- Wochenansicht ----------
 
     private Node weekView() {
         LocalDateTime now = LocalDateTime.now();
@@ -187,8 +182,6 @@ public class CalendarView {
         }
         return columns;
     }
-
-    // ---------- Monatsansicht ----------
 
     private Node monthView() {
         LocalDateTime now = LocalDateTime.now();

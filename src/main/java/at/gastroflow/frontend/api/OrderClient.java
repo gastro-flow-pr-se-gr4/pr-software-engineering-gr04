@@ -23,11 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Spricht mit der REST-API für Bestellungen (#75).
- * Läuft die API noch nicht, wird sie beim ersten Aufruf in der App mitgestartet,
- * damit "mvn javafx:run" wie bisher reicht. Die Datenbank (Docker) muss laufen.
- */
 public final class OrderClient {
 
     private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
@@ -43,15 +38,11 @@ public final class OrderClient {
     private OrderClient() {
     }
 
-    /** Nur für Tests: eine andere API-Adresse verwenden. */
     public static synchronized void useBaseUrl(String url) {
         baseUrl = url;
         checked = true;
     }
 
-    // ---------- Bestellungen ----------
-
-    /** Legt die Bestellung an; zurück kommt eine Bestellung pro Gang (Getränke, Vorspeise, …). */
     public static List<OrderDTO> create(CreateOrderRequest request) {
         return read(post("/orders", request), ORDER_LIST);
     }
@@ -60,7 +51,6 @@ public final class OrderClient {
         return read(get("/orders?open=true"), ORDER_LIST);
     }
 
-    /** Alles, was noch läuft: nicht serviert oder nicht bezahlt. */
     public static List<OrderDTO> activeOrders() {
         return read(get("/orders?active=true"), ORDER_LIST);
     }
@@ -77,8 +67,6 @@ public final class OrderClient {
         return read(post("/orders/" + id + "/cancel", null), OrderDTO.class);
     }
 
-    // ---------- Tische ----------
-
     public static BillDTO bill(int table) {
         return read(get("/tables/" + table + "/bill"), BillDTO.class);
     }
@@ -87,19 +75,14 @@ public final class OrderClient {
         return !bill(table).orders().isEmpty();
     }
 
-    /** Kassiert den Tisch ab und gibt den bezahlten Betrag zurück. */
     public static BigDecimal pay(int table) {
         return read(post("/tables/" + table + "/pay", null), JsonNode.class).get("paid").decimalValue();
     }
 
-    // ---------- Küche ----------
-
-    /** Tischkarten der Küche, ältester Tisch zuerst. */
     public static List<KitchenTableDTO> kitchenTables() {
         return read(get("/kitchen"), KITCHEN_LIST);
     }
 
-    /** Nächsten Gang starten (auch "Weiter mit …" – geht direkt in Zubereitung). */
     public static KitchenTableDTO startNextCourse(int table) {
         return read(post("/kitchen/" + table + "/next", null), KitchenTableDTO.class);
     }
@@ -112,8 +95,6 @@ public final class OrderClient {
         return read(post("/kitchen/" + table + "/close", null), KitchenTableDTO.class);
     }
 
-    // ---------- Gang pro Kategorie ----------
-
     public static Map<String, Course> courses(List<String> categories) {
         return read(post("/courses/lookup", Map.of("categories", categories)), COURSE_MAP);
     }
@@ -125,8 +106,6 @@ public final class OrderClient {
     public static void renameCategory(String from, String to) {
         post("/courses/rename", Map.of("from", from, "to", to));
     }
-
-    // ---------- HTTP ----------
 
     private static HttpResponse<byte[]> get(String path) {
         return send(HttpRequest.newBuilder(URI.create(base() + path)).GET());
@@ -181,7 +160,6 @@ public final class OrderClient {
         }
     }
 
-    // Beim ersten Aufruf prüfen, ob die API läuft – sonst in dieser App starten
     private static synchronized String base() {
         if (!checked) {
             checked = true;
@@ -190,7 +168,7 @@ public final class OrderClient {
                     embedded = new ApiServer();
                     embedded.start(ApiServer.DEFAULT_PORT);
                 } catch (IOException e) {
-                    embedded = null; // Port belegt o. Ä. – die Fehlermeldung kommt beim Aufruf
+                    embedded = null;
                 }
             }
         }

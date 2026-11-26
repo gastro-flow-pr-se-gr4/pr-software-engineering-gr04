@@ -28,7 +28,6 @@ import at.gastroflow.backend.demo.model.Product;
 import at.gastroflow.backend.demo.service.DemoData;
 import at.gastroflow.backend.demo.service.MenuService;
 
-// Bestellungen laufen über die REST-API des echten Backends (#75)
 import at.gastroflow.backend.dto.BillDTO;
 import at.gastroflow.backend.dto.OrderDTO;
 import at.gastroflow.backend.dto.OrderItemDTO;
@@ -60,15 +59,12 @@ public class ServiceController {
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
     private static final int TABLES_PER_ROW = 3;
 
-    // Produkte kommen aus der gemeinsamen Speisekarte (von der Leitung verwaltet)
     private int selectedTable = 4;
     private String category = null;
 
-    // Angefangene Bestellung pro Tisch – bleibt beim Tischwechsel und Abmelden erhalten
     private static final Map<Integer, OrderDraft> DRAFTS = new HashMap<>();
     private OrderDraft.Line selectedLine = null;
 
-    // Laufende Bestellungen aller Tische, einmal pro Aktualisierung von der REST-API geholt
     private List<OrderDTO> activeOrders = List.of();
 
     @FXML
@@ -122,7 +118,6 @@ public class ServiceController {
         showOrderPage();
     }
 
-    // Seiten innerhalb des Service: Bestellen und Reservierungen
 
     @FXML
     private void showOrderPage() {
@@ -150,7 +145,6 @@ public class ServiceController {
         showTables();
     }
 
-    // Reservierungen von heute (gleiche Daten wie in der Leitung)
 
     private void showReservations() {
 
@@ -211,7 +205,6 @@ public class ServiceController {
             row.getChildren().add(note);
         }
 
-        // Aktionen
         HBox actions = new HBox(8);
 
         if (reservation.getStatus() == ReservationStatus.BESTAETIGT) {
@@ -249,7 +242,6 @@ public class ServiceController {
         return button;
     }
 
-    // Wählt einen Tisch für die neue Bestellung aus
     private void selectTable(int table) {
         storeNote();
         selectedTable = table;
@@ -258,7 +250,6 @@ public class ServiceController {
         refresh();
     }
 
-    // Neue Reservierung für heute anlegen (mit Prüfung, ob der Tisch frei ist)
     @FXML
     private void newReservation() {
         if (ReservationDialog.show(null, LocalDate.now())) {
@@ -301,7 +292,6 @@ public class ServiceController {
 
         loadActiveOrders();
 
-        // Tischanzahl aus den gemeinsamen Einstellungen (von der Leitung festgelegt)
         for (int i = 1; i <= RestaurantSettings.get().getTableCount(); i++) {
 
             final int table = i;
@@ -315,7 +305,6 @@ public class ServiceController {
                 text = text + "\nab " + next.getStart().format(TIME_FORMAT);
             }
 
-            // Hinweis, dass die Küche etwas fertig hat
             boolean ready = activeOrders.stream()
                     .anyMatch(order -> order.table() == table && order.status() == OrderStatus.FERTIG);
             if (ready) {
@@ -339,8 +328,6 @@ public class ServiceController {
         }
     }
 
-    // Holt alle laufenden Bestellungen; ist das Backend nicht erreichbar, bleibt die Liste leer
-    // (die Fehlermeldung erscheint dann bei der Rechnung des Tisches)
     private void loadActiveOrders() {
         try {
             activeOrders = OrderClient.activeOrders();
@@ -439,7 +426,6 @@ public class ServiceController {
 
         productsPane.getChildren().clear();
 
-        // Nur aktive Produkte – deaktivierte können nicht neu bestellt werden
         for (Product product : MenuService.getAvailableProducts()) {
 
             if (!product.getCategory().equals(category)) {
@@ -488,14 +474,12 @@ public class ServiceController {
         refresh();
     }
 
-    // Übernimmt den eingetippten Text, damit kein Sonderwunsch verloren geht
     private void storeNote() {
         if (selectedLine != null) {
             selectedLine.setNote(noteArea.getText());
         }
     }
 
-    // Wählt die Position aus, zu der der Sonderwunsch gehört
     private void selectLine(OrderDraft.Line line) {
         selectedLine = line;
         noteArea.setText(line == null ? "" : line.getNote());
@@ -503,12 +487,10 @@ public class ServiceController {
         noteTarget.setText(line == null ? "" : "für " + line.getProduct().getName());
     }
 
-    // Angefangene Bestellung für den ausgewählten Tisch
     private OrderDraft draft() {
         return DRAFTS.computeIfAbsent(selectedTable, OrderDraft::new);
     }
 
-    // Eine Position mit Plus, Minus und Entfernen
     private VBox orderLine(OrderDraft.Line line) {
 
         Label qty = new Label(String.valueOf(line.getQuantity()));
@@ -552,10 +534,9 @@ public class ServiceController {
             box.getChildren().add(request);
         }
 
-        // Anklicken wählt die Position für den Sonderwunsch aus
         box.setOnMouseClicked(e -> {
             if (!draft().getLines().contains(line)) {
-                return; // wurde gerade entfernt
+                return;
             }
             storeNote();
             selectLine(line);
@@ -578,7 +559,6 @@ public class ServiceController {
         return button;
     }
 
-    // Fehler beim Absenden anzeigen (null = kein Fehler)
     private void showSendError(String message) {
         sendError.setText(message == null ? "" : message);
         sendError.setVisible(message != null);
@@ -614,7 +594,6 @@ public class ServiceController {
 
         totalLabel.setText(formatPrice(draft.getTotal()));
 
-        // Leere Bestellungen können nicht gesendet werden
         discardButton.setDisable(draft.isEmpty());
         sendButton.setDisable(draft.isEmpty());
         showSendError(null);
@@ -622,7 +601,6 @@ public class ServiceController {
         showBill();
     }
 
-    // Alle laufenden Bestellungen des Tisches; zu zahlen sind nur die unbezahlten
     private void showBill() {
 
         paidItems.getChildren().clear();
@@ -666,8 +644,6 @@ public class ServiceController {
         Region space = new Region();
         HBox.setHgrow(space, Priority.ALWAYS);
 
-        // abgeschlossen heißt hier: serviert, aber noch nicht bezahlt
-        // Getränke kommen nicht aus der Küche: "Zu bringen" statt "Neu"
         String status = order.status() == OrderStatus.ABGESCHLOSSEN ? "Serviert"
                 : !order.isKitchenOrder() && order.status() == OrderStatus.NEU ? "Zu bringen"
                 : order.status().toString();
@@ -734,14 +710,12 @@ public class ServiceController {
         storeNote();
         OrderDraft draft = draft();
 
-        // Prüfungen, die nur das Frontend kennt (Tische und Speisekarte liegen noch in der Demo)
         String problem = checkDraft(draft);
         if (problem != null) {
-            showSendError(problem); // die Bestellung bleibt zum Korrigieren erhalten
+            showSendError(problem);
             return;
         }
 
-        // Über die REST-API anlegen (eine Bestellung pro Gang); die id des Entwurfs verhindert doppeltes Speichern
         List<OrderDTO> orders;
         try {
             orders = OrderClient.create(draft.toRequest("Service"));
@@ -751,10 +725,8 @@ public class ServiceController {
         }
         draft.markSent();
 
-        // Zutaten automatisch vom Lager abbuchen
         orders.forEach(InventoryBridge::book);
 
-        // Entwurf leeren, bevor die Bestätigung erscheint – so ist kein zweites Absenden möglich
         DRAFTS.remove(selectedTable);
         selectLine(null);
         showTables();
@@ -786,7 +758,6 @@ public class ServiceController {
         }
     }
 
-    // Gibt es den Tisch noch und sind alle Produkte verfügbar? (null = alles in Ordnung)
     private String checkDraft(OrderDraft draft) {
         if (draft.isSent()) {
             return "Diese Bestellung wurde bereits an die Küche gesendet.";
@@ -807,7 +778,6 @@ public class ServiceController {
                 : "Nicht mehr verfügbar: " + unavailable + ". Bitte aus der Bestellung entfernen.";
     }
 
-    // Kategorien der Speisekarte, in denen es aktive Produkte gibt
     private List<String> categoriesWithProducts() {
         return MenuService.getCategories().stream()
                 .filter(c -> MenuService.getAvailableProducts().stream()
@@ -861,7 +831,6 @@ public class ServiceController {
         }
     }
 
-    // Nach dem Bezahlen sind die anwesenden Gäste dieses Tisches fertig
     private void endPresentReservations(int table) {
         for (Reservation reservation : ReservationService.getReservationsOn(LocalDate.now())) {
             if (reservation.getTable() == table && reservation.getStatus() == ReservationStatus.ANWESEND) {
@@ -898,7 +867,7 @@ public class ServiceController {
 
     @FXML
     private void handleLogout(ActionEvent event) {
-        storeNote(); // eingetippten Sonderwunsch nicht verlieren
+        storeNote();
         Navigation.toLogin((Node) event.getSource());
     }
 

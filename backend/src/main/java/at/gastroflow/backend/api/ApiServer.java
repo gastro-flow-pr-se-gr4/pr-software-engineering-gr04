@@ -35,33 +35,9 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * REST-API für Bestellungen (#75), gebaut mit dem in Java eingebauten HttpServer.
- *
- * GET  /api/health                    – läuft die API?
- * GET  /api/orders                    – alle Bestellungen; Filter: ?table=3, ?open=true, ?active=true, ?date=2026-11-26
- * GET  /api/orders/{id}               – eine Bestellung
- * POST /api/orders                    – Bestellung anlegen (CreateOrderRequest), Antwort: eine Bestellung pro Gang
- * POST /api/orders/{id}/status        – nächster Schritt, Body {"status":"IN_ZUBEREITUNG"}
- * POST /api/orders/{id}/cancel        – stornieren
- * GET  /api/tables/{nr}/bill          – offener Betrag und laufende Bestellungen eines Tisches
- * POST /api/tables/{nr}/pay           – Tisch abkassieren
- * GET  /api/kitchen                   – Tischkarten der Küche (Gang für Gang)
- * POST /api/kitchen/{nr}/next         – nächsten Gang starten (geht direkt in Zubereitung)
- * POST /api/kitchen/{nr}/ready        – aktueller Gang ist fertig
- * POST /api/kitchen/{nr}/close        – Küche schließt den Tisch ab
- * POST /api/courses/lookup            – Gang zu Kategorien, Body {"categories":["Desserts", …]}
- * POST /api/courses                   – Gang einer Kategorie setzen, Body {"category":"…","course":"NACHSPEISE"}
- * POST /api/courses/rename            – Kategorie umbenannt, Body {"from":"…","to":"…"}
- *
- * Die Tabellen (db/orders.sql) werden beim ersten Zugriff automatisch angelegt.
- *
- * Fehler kommen als {"error": "..."} mit 400 (ungültig), 404 (nicht gefunden),
- * 409 (Schritt nicht erlaubt) oder 503 (Datenbank nicht erreichbar).
- */
 public class ApiServer {
 
-    public static final int DEFAULT_PORT = 8090; // 8080 ist oft schon von anderen Dev-Servern belegt
+    public static final int DEFAULT_PORT = 8090;
     public static final String HOST = "127.0.0.1";
 
     private static final Pattern ORDER = Pattern.compile("/api/orders/([0-9a-fA-F-]{36})");
@@ -77,12 +53,10 @@ public class ApiServer {
     private HttpServer server;
     private volatile boolean tablesReady = false;
 
-    /** Mit der echten Datenbank: legt die Tabellen beim ersten Zugriff an, falls sie fehlen. */
     public ApiServer() {
         this(new OrderDAO(), new CourseDAO());
     }
 
-    /** Mit eigenen DAOs (z. B. im Speicher für Tests). */
     public ApiServer(OrderDAO orderDAO, CourseDAO courseDAO) {
         this.courseService = new CourseService(courseDAO);
         this.orderService = new OrderService(orderDAO, courseService);
@@ -90,7 +64,6 @@ public class ApiServer {
         this.schema = orderDAO;
     }
 
-    // Tabellen anlegen, sobald die Datenbank erreichbar ist (auch wenn Docker erst später startet)
     private void ensureTables() throws SQLException {
         if (!tablesReady && schema != null) {
             synchronized (this) {
@@ -102,13 +75,12 @@ public class ApiServer {
         }
     }
 
-    /** Startet den Server auf dem Port (0 = freier Port, z. B. für Tests) und gibt den Port zurück. */
     public synchronized int start(int port) throws IOException {
         server = HttpServer.create(new InetSocketAddress(HOST, port), 0);
         server.createContext("/api", this::handle);
         server.setExecutor(Executors.newFixedThreadPool(4, runnable -> {
             Thread thread = new Thread(runnable, "gastroflow-api");
-            thread.setDaemon(true); // beendet sich mit der App
+            thread.setDaemon(true);
             return thread;
         }));
         server.start();
@@ -122,13 +94,10 @@ public class ApiServer {
         }
     }
 
-    /** Eigenständiger Start der API auf http://127.0.0.1:8090/api. */
     public static void main(String[] args) throws Exception {
         int port = new ApiServer().start(DEFAULT_PORT);
         System.out.println("GastroFlow REST-API läuft auf http://" + HOST + ":" + port + "/api");
     }
-
-    // ---------- Anfragen verteilen ----------
 
     private void handle(HttpExchange exchange) throws IOException {
         try {
@@ -253,8 +222,6 @@ public class ApiServer {
     private List<OrderDTO> toDTOs(List<Order> orders) {
         return orders.stream().map(mapper::toDTO).toList();
     }
-
-    // ---------- Hilfen ----------
 
     private static OrderStatus parseStatus(String text) {
         try {

@@ -9,18 +9,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Temporäre Speicherung aller Bestellungen (gemeinsam für Service, Küche und Leitung). */
 public class OrderService {
     private static final List<Order> SENT_ORDERS = new ArrayList<>();
     private static int nextNumber = 1000;
 
-    /** Neue Bestellung: wird gespeichert und automatisch vom Lager abgebucht (laut Rezeptur). */
     public static void send(Order order) {
         addExisting(order);
         InventoryService.bookOrder(order);
     }
 
-    /** Übernimmt eine bereits vorhandene Bestellung ohne Lagerbuchung (z. B. Verlauf früherer Tage). */
     public static void addExisting(Order order) {
         order.setNumber(nextNumber++);
         SENT_ORDERS.add(order);
@@ -30,7 +27,6 @@ public class OrderService {
         return Collections.unmodifiableList(SENT_ORDERS);
     }
 
-    /** Bestellungen von from (inklusive) bis to (exklusive). */
     public static List<Order> getOrdersBetween(LocalDateTime from, LocalDateTime to) {
         List<Order> result = new ArrayList<>();
         for (Order order : SENT_ORDERS) {
@@ -54,10 +50,6 @@ public class OrderService {
         order.setStatus(status);
     }
 
-    /**
-     * Storniert eine offene Bestellung. Ist sie noch neu (nicht zubereitet),
-     * werden die Zutaten zurückgebucht. Gibt true zurück, wenn zurückgebucht wurde.
-     */
     public static boolean cancel(Order order) {
         if (!order.isOpen()) {
             throw new IllegalStateException("Nur offene Bestellungen können storniert werden.");

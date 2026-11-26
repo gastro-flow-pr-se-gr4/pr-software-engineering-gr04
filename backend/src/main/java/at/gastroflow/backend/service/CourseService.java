@@ -7,10 +7,6 @@ import java.sql.SQLException;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- * Welcher Gang gehört zu welcher Kategorie der Speisekarte?
- * Gespeicherte Werte (von der Leitung festgelegt) haben Vorrang, sonst wird anhand des Namens geraten.
- */
 public class CourseService {
 
     private final CourseDAO courseDAO;
@@ -23,7 +19,6 @@ public class CourseService {
         this.courseDAO = courseDAO;
     }
 
-    /** Nur die von der Leitung gespeicherten Zuordnungen. */
     public Map<String, Course> getSavedCourses() throws SQLException {
         return courseDAO.findAll();
     }
@@ -46,7 +41,6 @@ public class CourseService {
         courseDAO.save(category.trim(), course);
     }
 
-    /** Beim Umbenennen einer Kategorie bleibt ihr Gang erhalten. */
     public void renameCategory(String oldName, String newName) throws SQLException {
         Course course = getCourse(oldName);
         courseDAO.delete(oldName.trim());
@@ -57,7 +51,6 @@ public class CourseService {
         courseDAO.delete(category.trim());
     }
 
-    /** Vorschlag anhand des Namens, z. B. "Desserts" → Nachspeise, "Kaffee & Tee" → Getränk. */
     public static Course guessCourse(String category) {
         String name = category == null ? "" : category.toLowerCase(Locale.ROOT);
         if (containsAny(name, "hauptspeise", "hauptgericht")) {

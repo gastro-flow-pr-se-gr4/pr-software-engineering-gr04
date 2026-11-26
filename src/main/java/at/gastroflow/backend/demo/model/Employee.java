@@ -2,7 +2,6 @@ package at.gastroflow.backend.demo.model;
 
 import java.time.LocalTime;
 
-/** Eine Mitarbeiterin / ein Mitarbeiter mit Schicht für heute. */
 public class Employee {
 
     private final int id;

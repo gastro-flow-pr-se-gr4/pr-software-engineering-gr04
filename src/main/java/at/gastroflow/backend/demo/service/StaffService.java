@@ -8,13 +8,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Personal und heutige Schichten (nur im Speicher). */
 public class StaffService {
 
     private static final List<Employee> EMPLOYEES = new ArrayList<>();
     private static int nextId = 1;
 
-    // Beispieldaten
     static {
         seed("Katharina Lang", "Service", "Frühschicht", 8, 16, EmployeeStatus.IM_DIENST);
         seed("Mia Steiner", "Service", "Mittelschicht", 11, 19, EmployeeStatus.PAUSE);
@@ -35,7 +33,6 @@ public class StaffService {
         return Collections.unmodifiableList(EMPLOYEES);
     }
 
-    /** Namen aller Service-Mitarbeiter (Kellner). */
     public static List<String> getWaiterNames() {
         return EMPLOYEES.stream()
                 .filter(e -> e.getRole().equals("Service"))

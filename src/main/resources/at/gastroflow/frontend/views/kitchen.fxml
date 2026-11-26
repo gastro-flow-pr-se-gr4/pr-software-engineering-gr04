@@ -45,10 +45,8 @@
                                styleClass="page-subtitle"/>
                     </VBox>
 
-                    <!-- Drei Spalten nach Status, eine Karte pro Tisch -->
                     <HBox spacing="20" alignment="TOP_LEFT">
 
-                        <!-- Neu -->
                         <VBox spacing="16"
                               prefWidth="300"
                               minWidth="0"
@@ -90,7 +88,6 @@
                             <VBox fx:id="preparingColumn" spacing="16"/>
                         </VBox>
 
-                        <!-- Fertig -->
                         <VBox spacing="16"
                               prefWidth="300"
                               minWidth="0"

@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Ein Produkt der Speisekarte. */
 public class Product {
 
     private final int id;
@@ -41,14 +40,12 @@ public class Product {
     public String getAllergens() { return allergens; }
     public void setAllergens(String allergens) { this.allergens = allergens; }
 
-    /** Bild als Datei-URL, oder null wenn kein Bild hinterlegt ist. */
     public String getImagePath() { return imagePath; }
     public void setImagePath(String imagePath) { this.imagePath = imagePath; }
 
     public boolean isAvailable() { return available; }
     public void setAvailable(boolean available) { this.available = available; }
 
-    /** Rezeptur: Zutaten und Mengen für eine Portion (leer = keine Rezeptur hinterlegt). */
     public List<RecipeItem> getRecipe() { return Collections.unmodifiableList(recipe); }
     public void setRecipe(List<RecipeItem> recipe) { this.recipe = new ArrayList<>(recipe); }
 

@@ -36,11 +36,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-/** Speisekartenverwaltung: Kategorien, Produkte, Rezepturen und mögliche Portionen. */
 public class MenuView {
 
     private final VBox content = new VBox(24);
-    private String selectedCategory = null; // null = alle Produkte
+    private String selectedCategory = null;
     private String search = "";
 
     public Node build() {
@@ -59,9 +58,6 @@ public class MenuView {
         );
     }
 
-    // ---------- Kategorien ----------
-
-    // Gang pro Kategorie (gespeichert im Backend); leer, wenn das Backend nicht erreichbar ist
     private Map<String, Course> courses = Map.of();
 
     private VBox categoriesPanel() {
@@ -100,7 +96,6 @@ public class MenuView {
         });
 
         if (category != null) {
-            // Gang der Kategorie: entscheidet, ob und wann die Küche die Produkte kocht
             Course course = courses.get(category);
             row.getChildren().addAll(
                     Ui.small(course == null ? "Gang ?" : course.toString(), () -> changeCourse(category)),
@@ -142,7 +137,6 @@ public class MenuView {
         });
     }
 
-    // Getränke gehen nicht in die Küche; die anderen Gänge kocht die Küche nacheinander
     private Optional<Course> askCourse(String title, String category, Course current) {
         ChoiceDialog<Course> dialog = new ChoiceDialog<>(current, Course.values());
         dialog.setTitle(title);
@@ -157,7 +151,7 @@ public class MenuView {
             try {
                 MenuService.renameCategory(category, name);
                 try {
-                    OrderClient.renameCategory(category, name.trim()); // der Gang bleibt erhalten
+                    OrderClient.renameCategory(category, name.trim());
                 } catch (IllegalStateException e) {
                     Ui.error("Umbenannt, aber der Gang konnte nicht übernommen werden: " + e.getMessage());
                 }
@@ -194,8 +188,6 @@ public class MenuView {
         Ui.styleDialog(dialog);
         return dialog.showAndWait();
     }
-
-    // ---------- Produkte ----------
 
     private VBox productsPanel() {
         TextField searchField = new TextField(search);
@@ -309,9 +301,6 @@ public class MenuView {
         }
     }
 
-    // ---------- Produkt-Dialog inklusive Rezeptur ----------
-
-    /** Eine Zeile im Rezeptur-Editor. */
     private static final class RecipeRow {
         final ComboBox<Ingredient> ingredient = new ComboBox<>();
         final TextField amount = new TextField();
@@ -319,7 +308,6 @@ public class MenuView {
         HBox node;
     }
 
-    /** Dialog zum Hinzufügen (product == null) oder Bearbeiten eines Produkts. */
     private void openProductDialog(Product product) {
         if (MenuService.getCategories().isEmpty()) {
             Ui.error("Bitte zuerst eine Kategorie anlegen.");
@@ -348,13 +336,11 @@ public class MenuView {
         CheckBox available = new CheckBox("Kann bestellt werden");
         available.setSelected(product == null || product.isAvailable());
 
-        // Produktbild
         String[] imagePath = {product == null ? null : product.getImagePath()};
         HBox imageBox = new HBox(10);
         imageBox.setAlignment(Pos.CENTER_LEFT);
         rebuildImageBox(imageBox, imagePath, name, dialog);
 
-        // Rezeptur
         List<RecipeRow> recipeRows = new ArrayList<>();
         VBox recipeBox = new VBox(8);
         if (product != null) {
@@ -419,7 +405,7 @@ public class MenuView {
         RecipeRow row = new RecipeRow();
         row.ingredient.getItems().addAll(InventoryService.getIngredients(false));
         if (preset != null && !row.ingredient.getItems().contains(preset)) {
-            row.ingredient.getItems().add(preset); // archivierte Zutat, die schon in der Rezeptur steht
+            row.ingredient.getItems().add(preset);
         }
         row.ingredient.setPromptText("Zutat wählen");
         row.ingredient.setPrefWidth(230);
@@ -454,7 +440,7 @@ public class MenuView {
         List<RecipeItem> items = new ArrayList<>();
         for (RecipeRow row : rows) {
             if (row.ingredient.getValue() == null && row.amount.getText().isBlank()) {
-                continue; // leere Zeile ignorieren
+                continue;
             }
             if (row.ingredient.getValue() == null) {
                 throw new IllegalArgumentException("Bitte in jeder Rezeptur-Zeile eine Zutat auswählen.");
@@ -470,7 +456,6 @@ public class MenuView {
         return items;
     }
 
-    /** Zeigt Vorschau sowie die Buttons zum Auswählen und Entfernen des Bildes. */
     private void rebuildImageBox(HBox imageBox, String[] imagePath, TextField name, Dialog<ButtonType> dialog) {
         imageBox.getChildren().setAll(
                 thumbnail(imagePath[0], name.getText()),

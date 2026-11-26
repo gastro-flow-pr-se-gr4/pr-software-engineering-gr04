@@ -1,6 +1,5 @@
 package at.gastroflow.backend.model;
 
-/** Gang einer Bestellung. Getränke gehen nicht in die Küche, die anderen Gänge werden nacheinander gekocht. */
 public enum Course {
 
     GETRAENK("Getränk"),
@@ -14,7 +13,6 @@ public enum Course {
         this.label = label;
     }
 
-    /** Muss die Küche diesen Gang zubereiten? */
     public boolean isKitchen() {
         return this != GETRAENK;
     }

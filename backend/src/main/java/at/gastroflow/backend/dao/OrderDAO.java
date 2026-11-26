@@ -24,13 +24,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/** Speichert Bestellungen mit ihren Positionen in PostgreSQL (Tabellen orders und order_items). */
 public class OrderDAO {
 
     private static final String SELECT_ORDERS =
             "SELECT id, number, table_number, waiter, created_at, guests, status, paid_at, course, kitchen_closed, submission_id FROM orders";
 
-    /** Legt die Tabellen an, falls sie noch fehlen (Skript db/orders.sql). */
     public void createTables() throws SQLException {
         String script;
         try (InputStream in = OrderDAO.class.getResourceAsStream("/db/orders.sql")) {
@@ -59,13 +57,11 @@ public class OrderDAO {
         return query(SELECT_ORDERS + " WHERE table_number = ? ORDER BY created_at, number", table);
     }
 
-    /** Alles, was noch läuft: nicht serviert oder nicht bezahlt (Stornierte nicht). */
     public List<Order> findActive() throws SQLException {
         return query(SELECT_ORDERS + " WHERE status <> 'STORNIERT' AND (status <> 'ABGESCHLOSSEN' OR paid_at IS NULL)"
                 + " ORDER BY created_at, number");
     }
 
-    /** Bestellungen ab einem Zeitpunkt (z. B. alle von heute). */
     public List<Order> findSince(LocalDateTime from) throws SQLException {
         return query(SELECT_ORDERS + " WHERE created_at >= ? ORDER BY created_at, number", Timestamp.valueOf(from));
     }
@@ -75,7 +71,6 @@ public class OrderDAO {
         return orders.isEmpty() ? null : orders.get(0);
     }
 
-    /** Speichert mehrere Bestellungen (z. B. die Gänge eines Absendens) – alle oder keine. */
     public void saveAll(List<Order> orders) throws SQLException {
         try (Connection connection = DatabaseConnection.getConnection()) {
             connection.setAutoCommit(false);
@@ -92,7 +87,6 @@ public class OrderDAO {
         }
     }
 
-    /** Wurde mit dieser Absende-id schon etwas gespeichert? */
     public boolean existsSubmission(UUID submissionId) throws SQLException {
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement("SELECT 1 FROM orders WHERE submission_id = ?")) {
@@ -103,7 +97,6 @@ public class OrderDAO {
         }
     }
 
-    /** Die Küche hat diese Bestellungen abgeschlossen. */
     public void closeKitchen(List<UUID> ids) throws SQLException {
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(
@@ -113,7 +106,6 @@ public class OrderDAO {
         }
     }
 
-    /** Speichert Bestellung und Positionen in einem Schritt (alles oder nichts) und setzt die Nummer. */
     public void save(Order order) throws SQLException {
         saveAll(List.of(order));
     }
@@ -182,7 +174,6 @@ public class OrderDAO {
         }
     }
 
-    // Lädt Bestellungen und danach mit einer zweiten Abfrage alle ihre Positionen
     private List<Order> query(String sql, Object... params) throws SQLException {
         try (Connection connection = DatabaseConnection.getConnection()) {
             Map<UUID, Object[]> rows = new LinkedHashMap<>();

@@ -27,14 +27,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 
-/** Dashboard: Kennzahlen, Diagramme und Auswertungen. */
 public class DashboardView {
 
     private final VBox content = new VBox(24);
     private final Consumer<String> navigate;
     private int rangeDays = 7;
 
-    /** navigate öffnet einen anderen Bereich der Leitung (z. B. "Bestand & Lager"). */
     public DashboardView(Consumer<String> navigate) {
         this.navigate = navigate;
     }
@@ -88,8 +86,6 @@ public class DashboardView {
         );
     }
 
-    // ---------- Lagerwarnung ----------
-
     private Node stockWarning() {
         List<Ingredient> warnings = InventoryService.getWarnings();
         if (warnings.isEmpty()) {
@@ -113,8 +109,6 @@ public class DashboardView {
         banner.setOnMouseClicked(event -> navigate.accept("Bestand & Lager"));
         return banner;
     }
-
-    // ---------- Entwicklung (7 / 30 / 90 Tage) ----------
 
     private record Bucket(String label, LocalDate from, LocalDate to) {
     }
@@ -224,7 +218,6 @@ public class DashboardView {
                 revenueChart, Ui.columns(ordersBox, occupancyBox));
     }
 
-    // Veränderung in Prozent als farbiges Etikett
     private Label change(double now, double before) {
         if (before <= 0) {
             return Ui.badge("–", "gray");
@@ -249,8 +242,6 @@ public class DashboardView {
         HBox.setHgrow(card, Priority.ALWAYS);
         return card;
     }
-
-    // ---------- Beliebteste Produkte und Kategorien ----------
 
     private VBox topProductsPanel(LocalDate today) {
         VBox list = new VBox(10);
@@ -291,8 +282,6 @@ public class DashboardView {
         return new VBox(6, line, bar);
     }
 
-    // ---------- Stoßzeiten und Wochentage ----------
-
     private VBox peakHoursPanel(LocalDate today) {
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         Map<Integer, Double> perHour = AnalyticsService.averageOrdersPerHour(today.minusDays(30), today.minusDays(1));
@@ -330,8 +319,6 @@ public class DashboardView {
 
         return Ui.panel("Vergleich der Wochentage", Ui.muted(text), chart);
     }
-
-    // ---------- Hilfsmethoden für Diagramme ----------
 
     private CategoryAxis xAxis() {
         CategoryAxis axis = new CategoryAxis();

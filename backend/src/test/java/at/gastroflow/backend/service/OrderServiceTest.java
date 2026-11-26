@@ -18,7 +18,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Tests für die Bestellverwaltung im echten Backend (ohne Datenbank, mit InMemoryOrderDAO). */
 class OrderServiceTest {
 
     private InMemoryOrderDAO dao;
@@ -33,7 +32,6 @@ class OrderServiceTest {
         service = new OrderService(dao, new CourseService(new InMemoryCourseDAO()));
     }
 
-    // Kategorie "Test" zählt als Hauptspeise, damit eine Anfrage genau eine Bestellung ergibt
     private static OrderItemDTO item(String name, String price, int quantity, String note) {
         return new OrderItemDTO(name, "Test", new BigDecimal(price), quantity, note);
     }
@@ -43,8 +41,6 @@ class OrderServiceTest {
         assertEquals(1, orders.size(), "Testhilfe nur für Produkte eines Gangs");
         return orders.get(0);
     }
-
-    // ---------- Absenden (#19) und Gesamtpreis (#41) ----------
 
     @Test
     void createOrderSavesAllItems() throws SQLException {
@@ -65,8 +61,6 @@ class OrderServiceTest {
         assertEquals("1× Classic Burger: ohne Zwiebeln, extra Käse", order.getNoteText());
     }
 
-    // ---------- Leere und ungültige Bestellungen (#51, #54) ----------
-
     @Test
     void emptyOrderIsRejected() {
         assertThrows(IllegalArgumentException.class,
@@ -84,8 +78,6 @@ class OrderServiceTest {
         assertEquals(0, dao.saveCalls);
     }
 
-    // ---------- Doppelte Übermittlung (#42) ----------
-
     @Test
     void sameOrderCannotBeSentTwice() throws SQLException {
         CreateOrderRequest request = new CreateOrderRequest(UUID.randomUUID(), 1, "Service", 1, List.of(BURGER));
@@ -94,8 +86,6 @@ class OrderServiceTest {
         assertThrows(IllegalStateException.class, () -> service.createOrder(request));
         assertEquals(1, service.getAllOrders().size());
     }
-
-    // ---------- Statusschritte (#22, #23, #50, #43) ----------
 
     @Test
     void orderRunsFromNewToServed() throws SQLException {
@@ -107,7 +97,7 @@ class OrderServiceTest {
 
         assertEquals(OrderStatus.ABGESCHLOSSEN, served.getStatus());
         assertTrue(service.getOpenOrders().isEmpty());
-        assertFalse(served.isPaid()); // servieren ist nicht bezahlen
+        assertFalse(served.isPaid());
     }
 
     @Test
@@ -127,8 +117,6 @@ class OrderServiceTest {
     void unknownOrderIsReported() {
         assertThrows(NoSuchElementException.class, () -> service.getOrder(UUID.randomUUID()));
     }
-
-    // ---------- Rechnung und Bezahlen (#82, #83) ----------
 
     @Test
     void sentOrdersStayOnTheBillOfTheirTable() throws SQLException {
@@ -164,7 +152,7 @@ class OrderServiceTest {
 
         service.payTable(9);
 
-        assertEquals(OrderStatus.FERTIG, service.getOrder(order.getId()).getStatus()); // muss noch serviert werden
+        assertEquals(OrderStatus.FERTIG, service.getOrder(order.getId()).getStatus());
         assertTrue(service.isTableOccupied(9));
         service.changeStatus(order.getId(), OrderStatus.ABGESCHLOSSEN);
         assertFalse(service.isTableOccupied(9));
@@ -177,8 +165,6 @@ class OrderServiceTest {
         service.payTable(9);
         assertThrows(IllegalStateException.class, () -> service.payTable(9));
     }
-
-    // ---------- Stornieren (#52) ----------
 
     @Test
     void cancelledOrdersAreNotOnTheBill() throws SQLException {

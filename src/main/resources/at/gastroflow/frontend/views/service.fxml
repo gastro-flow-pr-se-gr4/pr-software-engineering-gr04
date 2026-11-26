@@ -12,7 +12,6 @@
         <HBox styleClass="header" spacing="24" alignment="CENTER_LEFT">
             <Label text="SERVICE" styleClass="brand"/>
 
-            <!-- Seiten innerhalb des Service -->
             <HBox spacing="6" alignment="CENTER_LEFT">
                 <Button fx:id="orderTab"
                         text="Bestellen"
@@ -46,13 +45,11 @@
                           prefWrapLength="1100"
                           styleClass="content-layout">
 
-                    <!-- LINKER BEREICH -->
                     <VBox fx:id="orderPanel"
                           minWidth="0"
                           prefWidth="520"
                           spacing="22">
 
-                        <!-- AKTUELLE BESTELLUNG -->
                         <VBox spacing="22" styleClass="panel">
 
                             <Label fx:id="currentTitle"
@@ -124,7 +121,6 @@
 
                         </VBox>
 
-                        <!-- ABRECHNUNG -->
                         <VBox spacing="18" styleClass="panel">
                             <Label fx:id="paidTitle"
                                    text="Tisch abrechnen · Tisch 04"
@@ -208,7 +204,6 @@
             </content>
         </ScrollPane>
 
-        <!-- SEITE: RESERVIERUNGEN -->
         <ScrollPane fx:id="reservationPage"
                     fitToWidth="true"
                     hbarPolicy="NEVER"

@@ -8,7 +8,6 @@
             stylesheets="@../styles/management.css"
             styleClass="root-shell">
 
-    <!-- Kopfzeile -->
     <top>
         <HBox alignment="CENTER_LEFT"
               spacing="14"
@@ -29,7 +28,6 @@
         </HBox>
     </top>
 
-    <!-- Interne Navigation der Leitung -->
     <left>
         <VBox fx:id="navBox"
               spacing="4"
@@ -37,7 +35,6 @@
               styleClass="sidebar"/>
     </left>
 
-    <!-- Inhalt des gewählten Bereichs -->
     <center>
         <StackPane fx:id="contentPane"/>
     </center>

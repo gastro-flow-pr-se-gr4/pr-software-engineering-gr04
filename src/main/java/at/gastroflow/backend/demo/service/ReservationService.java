@@ -14,7 +14,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
-/** Reservierungen inklusive Prüfung, ob ein Tisch frei ist und genug Plätze hat (nur im Speicher). */
 public class ReservationService {
 
     private static final List<Reservation> RESERVATIONS = new ArrayList<>();
@@ -25,7 +24,6 @@ public class ReservationService {
         return Collections.unmodifiableList(RESERVATIONS);
     }
 
-    /** Reservierungen von from bis to (beide Tage inklusive), nach Uhrzeit sortiert. */
     public static List<Reservation> getReservationsBetween(LocalDate from, LocalDate to) {
         return RESERVATIONS.stream()
                 .filter(r -> !r.getStart().toLocalDate().isBefore(from)
@@ -79,7 +77,6 @@ public class ReservationService {
         reservation.setTable(table);
     }
 
-    /** Erste andere Reservierung, die den Tisch zur gewünschten Zeit belegt. */
     public static Optional<Reservation> findConflict(int table, LocalDateTime start,
                                                      int durationMinutes, Reservation ignore) {
         LocalDateTime end = start.plusMinutes(durationMinutes);
@@ -96,7 +93,6 @@ public class ReservationService {
         return findConflict(table, start, durationMinutes, ignore).isEmpty();
     }
 
-    /** Tische, die zur Zeit frei sind und genug Plätze für die Personen haben. */
     public static List<Integer> getFreeTables(LocalDateTime start, int durationMinutes, int persons,
                                               Reservation ignore) {
         RestaurantSettings settings = RestaurantSettings.get();

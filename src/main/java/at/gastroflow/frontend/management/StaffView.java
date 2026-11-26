@@ -18,7 +18,6 @@ import javafx.scene.layout.VBox;
 
 import java.util.List;
 
-/** Personalübersicht mit Schichten und aktuellem Status. */
 public class StaffView {
 
     private static final List<String> ROLES = List.of("Service", "Küche", "Bar", "Leitung");
@@ -96,7 +95,6 @@ public class StaffView {
         return String.valueOf(StaffService.getEmployees().stream().filter(e -> e.getStatus() == status).count());
     }
 
-    /** Dialog zum Anlegen (employee == null) oder Bearbeiten. */
     private void openDialog(Employee employee) {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle(employee == null ? "Mitarbeiter hinzufügen" : "Mitarbeiter bearbeiten");

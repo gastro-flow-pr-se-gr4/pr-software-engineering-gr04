@@ -10,7 +10,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
-/** Ersatz für die Datenbank in Tests: hält Bestellungen nur im Speicher. */
 public class InMemoryOrderDAO extends OrderDAO {
 
     private final List<Order> orders = new ArrayList<>();

@@ -6,7 +6,6 @@ import at.gastroflow.backend.model.Course;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** Ersatz für die Tabelle category_courses in Tests. */
 public class InMemoryCourseDAO extends CourseDAO {
 
     private final Map<String, Course> courses = new LinkedHashMap<>();
