@@ -10,6 +10,8 @@ public class ProductDTO {
     private String description;
     private boolean available;
 
+    public ProductDTO() {}
+
     public ProductDTO(UUID id, String name, BigDecimal price, String description, boolean available) {
         this.id = id;
         this.name = name;

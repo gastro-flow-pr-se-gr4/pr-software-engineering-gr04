@@ -13,4 +13,22 @@ public class ProductMapper {
                 product.isAvailable()
         );
     }
+
+    public Product toEntity(ProductDTO dto) {
+        if (dto.getId() == null) {
+            return new Product(
+                dto.getName(),
+                dto.getPrice(),
+                dto.getDescription(),
+                dto.isAvailable()
+        );
+        }
+        return new Product(
+                dto.getId(),
+                dto.getName(),
+                dto.getPrice(),
+                dto.getDescription(),
+                dto.isAvailable()
+        );
+    }
 }
