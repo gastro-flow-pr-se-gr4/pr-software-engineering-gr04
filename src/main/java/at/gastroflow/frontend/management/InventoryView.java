@@ -1,12 +1,5 @@
 package at.gastroflow.frontend.management;
 
-import at.gastroflow.backend.demo.model.Ingredient;
-import at.gastroflow.backend.demo.model.MovementType;
-import at.gastroflow.backend.demo.model.Product;
-import at.gastroflow.backend.demo.model.StockMovement;
-import at.gastroflow.backend.demo.model.StockStatus;
-import at.gastroflow.backend.demo.model.Unit;
-import at.gastroflow.backend.demo.service.InventoryService;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.geometry.Pos;

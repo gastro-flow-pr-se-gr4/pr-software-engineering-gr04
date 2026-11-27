@@ -1,9 +1,5 @@
 package at.gastroflow.frontend.api;
 
-import at.gastroflow.backend.demo.model.Order;
-import at.gastroflow.backend.demo.model.OrderItem;
-import at.gastroflow.backend.demo.model.OrderStatus;
-import at.gastroflow.backend.demo.service.InventoryService;
 import at.gastroflow.backend.dto.OrderDTO;
 
 import java.util.List;

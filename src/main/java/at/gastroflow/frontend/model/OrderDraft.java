@@ -1,6 +1,5 @@
 package at.gastroflow.frontend.model;
 
-import at.gastroflow.backend.demo.model.Product;
 import at.gastroflow.backend.dto.CreateOrderRequest;
 import at.gastroflow.backend.dto.OrderItemDTO;
 

@@ -1,8 +1,5 @@
 package at.gastroflow.frontend.controller;
 
-import at.gastroflow.backend.demo.model.RestaurantSettings;
-import at.gastroflow.backend.demo.service.DemoData;
-import at.gastroflow.backend.demo.service.InventoryService;
 import at.gastroflow.frontend.management.InventoryView;
 import at.gastroflow.frontend.management.CalendarView;
 import at.gastroflow.frontend.management.DashboardView;
@@ -38,7 +35,6 @@ public class ManagementController {
 
     @FXML
     private void initialize() {
-        DemoData.load();
         InventoryService.ensureLoaded();
 
         addSection("▦", "Dashboard", () -> new DashboardView(this::showSection).build());

@@ -17,16 +17,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import at.gastroflow.backend.demo.model.Reservation;
-import at.gastroflow.backend.demo.model.ReservationStatus;
-import at.gastroflow.backend.demo.model.RestaurantSettings;
-import at.gastroflow.backend.demo.service.ReservationService;
 import at.gastroflow.frontend.management.ReservationDialog;
 import at.gastroflow.frontend.management.Ui;
-
-import at.gastroflow.backend.demo.model.Product;
-import at.gastroflow.backend.demo.service.DemoData;
-import at.gastroflow.backend.demo.service.MenuService;
 
 import at.gastroflow.backend.dto.BillDTO;
 import at.gastroflow.backend.dto.OrderDTO;
@@ -70,7 +62,6 @@ public class ServiceController {
     @FXML
     private void initialize() {
 
-        DemoData.load();
         List<String> categories = categoriesWithProducts();
         category = categories.isEmpty() ? null : categories.get(0);
 

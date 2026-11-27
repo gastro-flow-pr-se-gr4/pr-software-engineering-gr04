@@ -1,10 +1,5 @@
 package at.gastroflow.frontend.management;
 
-import at.gastroflow.backend.demo.model.OrderItem;
-import at.gastroflow.backend.demo.model.Product;
-import at.gastroflow.backend.demo.model.RestaurantSettings;
-import at.gastroflow.backend.demo.service.InventoryService;
-import at.gastroflow.backend.demo.service.MenuService;
 import at.gastroflow.backend.dto.CreateOrderRequest;
 import at.gastroflow.backend.dto.OrderDTO;
 import at.gastroflow.backend.dto.OrderItemDTO;

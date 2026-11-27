@@ -1,7 +1,5 @@
 package at.gastroflow.frontend.management;
 
-import at.gastroflow.backend.demo.model.Reservation;
-import at.gastroflow.backend.demo.service.ReservationService;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
