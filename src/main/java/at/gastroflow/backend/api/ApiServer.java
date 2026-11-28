@@ -16,6 +16,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import at.gastroflow.backend.service.ProductService;
+import at.gastroflow.backend.model.Product;
+import at.gastroflow.backend.dto.ProductDTO;
+import at.gastroflow.backend.mapper.ProductMapper;
+import java.util.ArrayList;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -50,6 +55,8 @@ public class ApiServer {
     private final CourseService courseService;
     private final OrderDAO schema;
     private final OrderMapper mapper = new OrderMapper();
+    private final ProductService productService = new ProductService();
+    private final ProductMapper productMapper = new ProductMapper();
     private HttpServer server;
     private volatile boolean tablesReady = false;
 
@@ -142,6 +149,85 @@ public class ApiServer {
                 } else {
                     error(exchange, 405, "Diese Methode ist hier nicht erlaubt.");
                 }
+
+            } else if (path.equals("/api/products") && method.equals("GET")) {
+                List<Product> products = productService.getAllProducts();
+                List<ProductDTO> productDTOs = new ArrayList<>();
+
+                for (Product product : products) {
+                    productDTOs.add(productMapper.toDTO(product));
+                }
+
+                send(exchange, 200, productDTOs);
+
+            } else if (path.equals("/api/products") && method.equals("POST")) {
+                ProductDTO dto = read(exchange, ProductDTO.class);
+
+                if (dto == null) {
+                    throw new IllegalArgumentException("Produkt fehlt!");
+                }
+
+                Product product = new Product(
+                        dto.getName(),
+                        dto.getPrice(),
+                        dto.getDescription(),
+                        dto.isAvailable()
+                );
+
+                productService.saveProduct(product);
+
+                send(exchange, 201, productMapper.toDTO(product));
+
+            } else if (path.startsWith("/api/products/") && method.equals("GET")) {
+                String id = path.substring("/api/products/".length());
+
+                Product product = productService.getProductById(UUID.fromString(id));
+
+                if (product == null) {
+                    error(exchange, 404, "Produkt nicht gefunden!");
+                } else {
+                    send(exchange, 200, productMapper.toDTO(product));
+                }
+
+            } else if (path.startsWith("/api/products/") && method.equals("PUT")) {
+                String id = path.substring("/api/products/".length());
+                UUID productId = UUID.fromString(id);
+
+                if (productService.getProductById(productId) == null) {
+                    error(exchange, 404, "Produkt nicht gefunden!");
+                    return;
+                }
+
+                ProductDTO dto = read(exchange, ProductDTO.class);
+
+                if (dto == null) {
+                    throw new IllegalArgumentException("Produkt fehlt!");
+                }
+
+                Product product = new Product(
+                        productId,
+                        dto.getName(),
+                        dto.getPrice(),
+                        dto.getDescription(),
+                        dto.isAvailable()
+                );
+
+                productService.updateProduct(product);
+
+                send(exchange, 200, productMapper.toDTO(product));
+
+            } else if (path.startsWith("/api/products/") && method.equals("DELETE")) {
+                String id = path.substring("/api/products/".length());
+                UUID productId = UUID.fromString(id);
+
+                if (productService.getProductById(productId) == null) {
+                    error(exchange, 404, "Produkt nicht gefunden!");
+                    return;
+                }
+
+                productService.deleteProduct(productId);
+
+                send(exchange, 200, Map.of("message", "Produkt gelöscht!"));
 
             } else if (path.equals("/api/kitchen") && method.equals("GET")) {
                 send(exchange, 200, kitchenService.getTables());
