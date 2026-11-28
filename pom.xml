@@ -8,46 +8,64 @@
     <groupId>at.gastroflow</groupId>
     <artifactId>gastroflow</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <packaging>pom</packaging>
-    <modules>
-        <module>backend</module>
-        <module>frontend</module>
-    </modules>
 
     <properties>
         <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <javafx.version>25.0.1</javafx.version>
         <junit.version>5.12.2</junit.version>
-        <javafx.skip>true</javafx.skip>
     </properties>
 
     <dependencies>
+
         <!-- JavaFX-Oberflächen -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
-            <version>25.0.1</version>
+            <version>${javafx.version}</version>
         </dependency>
 
         <!-- FXML-Dateien -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
-            <version>25.0.1</version>
+            <version>${javafx.version}</version>
+        </dependency>
+
+        <!-- PostgreSQL und JDBC -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.7</version>
+        </dependency>
+
+        <!-- JSON-Verarbeitung für die REST-API -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.18.2</version>
+        </dependency>
+
+        <!-- JSON-Verarbeitung von Datum und Uhrzeit -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>2.18.2</version>
         </dependency>
 
         <!-- JUnit-Tests -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.12.2</version>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
+
     </dependencies>
 
     <build>
         <plugins>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -68,6 +86,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.3</version>
             </plugin>
+
         </plugins>
     </build>
 

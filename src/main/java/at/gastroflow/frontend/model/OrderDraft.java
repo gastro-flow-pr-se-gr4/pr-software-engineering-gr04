@@ -1,10 +1,8 @@
 package at.gastroflow.frontend.model;
 
-import at.gastroflow.backend.demo.model.Product;
 import at.gastroflow.backend.dto.CreateOrderRequest;
-import at.gastroflow.backend.dto.OrderItemDTO;
+import at.gastroflow.backend.model.Product;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,18 +23,27 @@ public class OrderDraft {
             this.product = product;
         }
 
-        public Product getProduct() { return product; }
+        public Product getProduct() {
+            return product;
+        }
 
-        public int getQuantity() { return quantity; }
+        public int getQuantity() {
+            return quantity;
+        }
 
-        public String getNote() { return note; }
+        public String getNote() {
+            return note;
+        }
 
         public void setNote(String note) {
-            this.note = note == null ? "" : note.trim().replaceAll("\\s*\\R\\s*", ", ");
+            this.note = note == null ? "" :
+                    note.trim().replaceAll("\\s*\\R\\s*", ", ");
         }
 
         public double getTotal() {
-            return roundToCents(product.getPrice() * quantity);
+            return roundToCents(
+                    product.getPrice().doubleValue() * quantity
+            );
         }
     }
 
@@ -49,22 +56,35 @@ public class OrderDraft {
         this.table = table;
     }
 
-    public int getTable() { return table; }
+    public int getTable() {
+        return table;
+    }
 
-    public List<Line> getLines() { return Collections.unmodifiableList(lines); }
+    public List<Line> getLines() {
+        return Collections.unmodifiableList(lines);
+    }
 
-    public boolean isEmpty() { return lines.isEmpty(); }
+    public boolean isEmpty() {
+        return lines.isEmpty();
+    }
 
-    public boolean isSent() { return sent; }
-    public void markSent() { sent = true; }
+    public boolean isSent() {
+        return sent;
+    }
+
+    public void markSent() {
+        sent = true;
+    }
 
     public Line add(Product product) {
         for (Line line : lines) {
-            if (line.product == product && line.note.isEmpty()) {
+            if (line.product.getId().equals(product.getId())
+                    && line.note.isEmpty()) {
                 increase(line);
                 return line;
             }
         }
+
         Line line = new Line(product);
         lines.add(line);
         return line;
@@ -91,28 +111,34 @@ public class OrderDraft {
     }
 
     public double getTotal() {
-        return roundToCents(lines.stream().mapToDouble(Line::getTotal).sum());
+        return roundToCents(
+                lines.stream().mapToDouble(Line::getTotal).sum()
+        );
     }
 
     public int getItemCount() {
-        return lines.stream().mapToInt(Line::getQuantity).sum();
+        return lines.stream()
+                .mapToInt(Line::getQuantity)
+                .sum();
     }
 
     public String getNoteText() {
         return lines.stream()
                 .filter(line -> !line.note.isEmpty())
-                .map(line -> line.quantity + "× " + line.product.getName() + ": " + line.note)
+                .map(line -> line.quantity + "× "
+                        + line.product.getName() + ": " + line.note)
                 .collect(Collectors.joining("\n"));
     }
 
-    public UUID getId() { return id; }
+    public UUID getId() {
+        return id;
+    }
 
+    // TODO: Nach Anbindung der Produktverwaltung fertigstellen.
     public CreateOrderRequest toRequest(String waiter) {
-        List<OrderItemDTO> items = lines.stream()
-                .map(line -> new OrderItemDTO(line.product.getName(), line.product.getCategory(),
-                        BigDecimal.valueOf(line.product.getPrice()), line.quantity, line.note))
-                .toList();
-        return new CreateOrderRequest(id, table, waiter, 1, items);
+        throw new UnsupportedOperationException(
+                "Bestellerstellung noch nicht angebunden."
+        );
     }
 
     private static double roundToCents(double value) {

@@ -16,6 +16,9 @@ public class ProductService {
     }
 
     public Product getProductById(UUID id) throws SQLException{
+        if(id == null){
+            throw new SQLException("Product ID darf nicht null sein!");
+        }
         return productDAO.findById(id);
     }
 
@@ -26,7 +29,7 @@ public class ProductService {
 
     public void updateProduct(Product product) throws SQLException{
         checkProduct(product);
-        productDAO.save(product);
+        productDAO.update(product);
     }
 
     public void deleteProduct(UUID id) throws SQLException{

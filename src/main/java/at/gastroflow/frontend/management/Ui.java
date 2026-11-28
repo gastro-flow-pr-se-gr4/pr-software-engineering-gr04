@@ -1,10 +1,6 @@
 package at.gastroflow.frontend.management;
 
-import at.gastroflow.backend.demo.model.EmployeeStatus;
 import at.gastroflow.backend.model.OrderStatus;
-import at.gastroflow.backend.demo.model.Reservation;
-import at.gastroflow.backend.demo.model.ReservationStatus;
-import at.gastroflow.backend.demo.model.StockStatus;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -24,7 +20,6 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 import java.text.NumberFormat;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -152,14 +147,6 @@ public final class Ui {
         return label;
     }
 
-    public static Label demoHint(String text) {
-        Label label = new Label("DEMO-DATEN  ·  " + text);
-        label.getStyleClass().add("demo-hint");
-        label.setWrapText(true);
-        label.setMaxWidth(Double.MAX_VALUE);
-        return label;
-    }
-
     public static Label badge(String text, String color) {
         Label label = new Label(text);
         label.getStyleClass().addAll("status-label", "status-" + color);
@@ -277,28 +264,6 @@ public final class Ui {
         alert.showAndWait();
     }
 
-    public static String reservationLabel(Reservation reservation, LocalDateTime now) {
-        if (reservation.getStatus() == ReservationStatus.BESTAETIGT) {
-            if (now.isAfter(reservation.getStart().plusMinutes(15))) {
-                return "Überfällig";
-            }
-            if (!now.isBefore(reservation.getStart().minusMinutes(60))) {
-                return "Bald erwartet";
-            }
-        }
-        return reservation.getStatus().toString();
-    }
-
-    public static String reservationColor(Reservation reservation, LocalDateTime now) {
-        return switch (reservationLabel(reservation, now)) {
-            case "Anwesend" -> "green";
-            case "Bald erwartet" -> "orange";
-            case "Abgeschlossen" -> "gray";
-            case "No-Show", "Überfällig" -> "red";
-            default -> "blue";
-        };
-    }
-
     public static String orderColor(OrderStatus status) {
         return switch (status) {
             case NEU -> "orange";
@@ -306,14 +271,6 @@ public final class Ui {
             case FERTIG -> "green";
             case ABGESCHLOSSEN -> "gray";
             case STORNIERT -> "red";
-        };
-    }
-
-    public static String stockColor(StockStatus status) {
-        return switch (status) {
-            case AUSREICHEND -> "green";
-            case NIEDRIG -> "orange";
-            case NICHT_VERFUEGBAR -> "red";
         };
     }
 
@@ -390,12 +347,4 @@ public final class Ui {
         return button;
     }
 
-    public static String employeeColor(EmployeeStatus status) {
-        return switch (status) {
-            case IM_DIENST -> "green";
-            case PAUSE -> "orange";
-            case NICHT_ERSCHIENEN -> "red";
-            case FEIERABEND -> "gray";
-        };
-    }
 }
