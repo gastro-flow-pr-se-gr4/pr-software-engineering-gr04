@@ -8,11 +8,16 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import at.gastroflow.frontend.api.ProductClient;
+import at.gastroflow.backend.dto.ProductDTO;
+import java.util.List;
+import java.io.IOException;
 
 public class MenuView {
 
     private final VBox content = new VBox(24);
     private String search = "";
+    private final ProductClient productClient = new ProductClient();
 
     public Node build() {
         render();
@@ -42,9 +47,6 @@ public class MenuView {
                         categoryButton,
                         productButton
                 ),
-
-                Ui.muted("Produktverwaltung noch nicht angebunden."),
-
                 layout
         );
     }
@@ -95,11 +97,14 @@ public class MenuView {
         searchField.setPromptText("Produkt suchen …");
         searchField.setPrefWidth(240);
 
-        searchField.textProperty().addListener(
-                (obs, oldText, newText) -> search = newText
-        );
+        VBox rows = new VBox(12);
 
-        VBox rows = new VBox();
+        searchField.textProperty().addListener(
+                (obs, oldText, newText) -> {
+                    search = newText;
+                    fillProductRows(rows);
+                }
+        );
 
         fillProductRows(rows);
 
@@ -119,11 +124,6 @@ public class MenuView {
                 "Alle Produkte",
 
                 top,
-
-                Ui.muted(
-                        "Produktdaten werden nach Anbindung "
-                                + "der REST-API angezeigt."
-                ),
 
                 Ui.headingRow(
                         Ui.cell("", 48),
@@ -148,8 +148,47 @@ public class MenuView {
 
         rows.getChildren().clear();
 
-        rows.getChildren().add(
-                Ui.muted("Produkte derzeit nicht verfügbar.")
-        );
+        try {
+            List<ProductDTO> products = productClient.getAllProducts();
+
+            for (ProductDTO product : products) {
+                if (!product.getName().toLowerCase().contains(search.toLowerCase())) {
+                    continue;
+                }
+
+                String status;
+
+                if (product.isAvailable()) {
+                    status = "Ja";
+                } else {
+                    status = "Nein";
+                }
+
+                HBox row = new HBox(
+                        8,
+                        Ui.cell("", 48),
+                        Ui.growCell(product.getName()),
+                        Ui.cell(product.getPrice() + " €", 72),
+                        Ui.cell("–", 82),
+                        Ui.cell(status, 70),
+                        Ui.cell("", 170)
+                );
+
+                row.setAlignment(Pos.CENTER_LEFT);
+
+                rows.getChildren().add(row);
+            }
+
+            if (products.isEmpty()) {
+                rows.getChildren().add(
+                        Ui.muted("Keine Produkte vorhanden.")
+                );
+            }
+
+        } catch (IOException | InterruptedException e) {
+            rows.getChildren().add(
+                    Ui.muted("Produkte konnten nicht geladen werden.")
+            );
+        }
     }
 }
